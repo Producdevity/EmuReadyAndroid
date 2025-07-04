@@ -19,3 +19,40 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep Retrofit interfaces
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+
+# Keep Kotlinx Serialization
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keep,includedescriptorclasses class com.emuready.emuready.**$$serializer { *; }
+-keepclassmembers class com.emuready.emuready.** {
+    *** Companion;
+}
+
+# Keep Room entities
+-keep class com.emuready.emuready.data.local.entities.** { *; }
+
+# Keep Hilt generated classes
+-keep class dagger.hilt.** { *; }
+-keep class javax.inject.** { *; }
+-keep class * extends dagger.hilt.android.lifecycle.HiltViewModel
+
+# Keep domain entities
+-keep class com.emuready.emuready.domain.entities.** { *; }
+
+# Keep API DTOs
+-keep class com.emuready.emuready.data.remote.dto.** { *; }
+
+# Keep emulator configuration classes
+-keep class com.emuready.emuready.domain.entities.EmulatorConfiguration { *; }
+-keep class com.emuready.emuready.domain.entities.*Config { *; }
