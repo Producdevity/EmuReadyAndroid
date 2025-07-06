@@ -28,12 +28,12 @@ interface EmuReadyTrpcApiService {
     @POST("trpc/auth.deleteAccount")
     suspend fun deleteAccount(@Body request: TrpcRequest<Unit>): TrpcResponse<SuccessResponse>
     
-    // Listings endpoints
-    @POST("trpc/listings.getListings")
-    suspend fun getListings(@Body request: TrpcRequest<GetListingsSchema>): TrpcResponse<MobileListingsResponse>
+    // Listings endpoints - using the correct tRPC GET format
+    @GET("trpc/listings.getFeaturedListings")
+    suspend fun getFeaturedListings(@Query("batch") batch: Int = 1, @Query("input") input: String): List<TrpcResponse<List<MobileListing>>>
     
-    @POST("trpc/listings.getFeaturedListings")
-    suspend fun getFeaturedListings(@Body request: TrpcRequest<LimitRequest>): TrpcResponse<List<MobileListing>>
+    @GET("trpc/listings.getListings")
+    suspend fun getListings(@Query("batch") batch: Int = 1, @Query("input") input: String): List<TrpcResponse<List<MobileListing>>>
     
     @POST("trpc/listings.getListingsByGame")
     suspend fun getListingsByGame(@Body request: TrpcRequest<GameIdRequest>): TrpcResponse<List<MobileListing>>

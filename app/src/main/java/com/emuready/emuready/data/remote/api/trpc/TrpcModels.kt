@@ -52,6 +52,11 @@ data class TrpcErrorData(
  * tRPC Request Builder utility class
  */
 class TrpcRequestBuilder {
+    val json = kotlinx.serialization.json.Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    }
+    
     fun <T> buildQuery(input: T): TrpcRequest<T> {
         return TrpcRequest(
             `0` = TrpcRequestBody(json = input)
@@ -62,5 +67,17 @@ class TrpcRequestBuilder {
         return TrpcRequest(
             `0` = TrpcRequestBody(json = Unit)
         )
+    }
+    
+    /**
+     * Build query parameter string for GET requests
+     */
+    inline fun <reified T> buildQueryParam(input: T): String {
+        val request = TrpcRequest(`0` = TrpcRequestBody(json = input))
+        return json.encodeToString(TrpcRequest.serializer(kotlinx.serialization.serializer<T>()), request)
+    }
+    
+    fun buildEmptyQueryParam(): String {
+        return buildQueryParam(Unit)
     }
 }

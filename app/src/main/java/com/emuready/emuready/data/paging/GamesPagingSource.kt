@@ -5,7 +5,8 @@ import androidx.paging.PagingState
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
 import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
-import com.emuready.emuready.data.remote.dto.GetGamesSchema
+import com.emuready.emuready.data.remote.dto.GetListingsSchema
+import com.emuready.emuready.data.remote.dto.MobileListing
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.presentation.viewmodels.SortOption
 
@@ -22,61 +23,56 @@ class GamesPagingSource(
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Game> {
         return try {
-            val page = params.key ?: 1
-            val pageSize = minOf(params.loadSize, 50) // API max limit is 50
+            val currentKey = params.key ?: 1
+            val pageSize = params.loadSize
             
-            // Use appropriate API endpoint based on sort option and search
-            val response = when {
-                sortBy == SortOption.POPULARITY && search.isNullOrBlank() -> {
-                    val request = requestBuilder.buildQuery(com.emuready.emuready.data.remote.api.LimitRequest(limit = pageSize))
-                    trpcApiService.getPopularGames(request)
-                }
-                !search.isNullOrBlank() -> {
-                    val request = requestBuilder.buildQuery(com.emuready.emuready.data.remote.api.QueryRequest(search))
-                    trpcApiService.searchGames(request)
-                }
-                else -> {
-                    val request = requestBuilder.buildQuery(
-                        GetGamesSchema(
-                            search = search,
-                            systemId = systemIds.firstOrNull(),
-                            limit = pageSize
-                        )
-                    )
-                    trpcApiService.getGames(request)
-                }
-            }
+            // Build the request parameters according to GetListingsSchema
+            val requestData = GetListingsSchema(
+                limit = pageSize,
+                page = currentKey,
+                search = search,
+                systemId = systemIds.firstOrNull(), // GetListingsSchema only supports single systemId
+                deviceId = deviceIds.firstOrNull(), // GetListingsSchema only supports single deviceId
+                emulatorId = emulatorIds.firstOrNull() // GetListingsSchema only supports single emulatorId
+            )
             
-            if (response.error != null) {
+            // Encode the request as a query parameter
+            val inputParam = requestBuilder.buildQueryParam(requestData)
+            val responseList = trpcApiService.getListings(input = inputParam)
+            val response = responseList.firstOrNull()
+            
+            if (response?.error != null) {
                 LoadResult.Error(Exception(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                var games = response.result.data.json.map { it.toDomain() }
+            } else if (response?.result?.data?.json != null) {
+                val listings = response.result.data.json
                 
-                // Apply client-side filtering since API doesn't support all filters
-                if (deviceIds.isNotEmpty() || emulatorIds.isNotEmpty() || performanceIds.isNotEmpty()) {
-                    // Note: These filters would require additional API calls to get listing data
-                    // For now, we'll show all games and let the user filter on the detail page
+                // Extract unique games from listings and calculate their compatibility
+                val gameMap = mutableMapOf<String, MutableList<MobileListing>>()
+                listings.forEach { listing ->
+                    val gameId = listing.game.id
+                    gameMap.getOrPut(gameId) { mutableListOf() }.add(listing)
                 }
                 
-                // Apply client-side sorting for non-popularity sorts
-                when (sortBy) {
-                    SortOption.ALPHABETICAL -> games = games.sortedBy { it.title }
-                    SortOption.RATING -> games = games.sortedByDescending { it.averageRating }
-                    SortOption.LISTING_COUNT -> games = games.sortedByDescending { it.listingCount }
-                    SortOption.POPULARITY -> { /* Already sorted by API */ }
-                    SortOption.DATE_ADDED -> { /* Use default order */ }
+                val games = gameMap.map { (gameId, gameListings) ->
+                    val firstListing = gameListings.first()
+                    val game = firstListing.game.toDomain()
+                    
+                    // Calculate average compatibility from all listings for this game
+                    val avgCompatibility = gameListings.map { it.performance.rank }.average().toFloat() / 5.0f
+                    
+                    game.copy(
+                        averageCompatibility = avgCompatibility.coerceIn(0.0f, 1.0f),
+                        totalListings = gameListings.size
+                    )
                 }
-                
-                // Simple pagination: return all results on first page, empty on subsequent pages
-                val finalGames = if (page == 1) games else emptyList()
                 
                 LoadResult.Page(
-                    data = finalGames,
-                    prevKey = if (page == 1) null else page - 1,
-                    nextKey = if (finalGames.isEmpty() || page > 1) null else page + 1
+                    data = games,
+                    prevKey = if (currentKey == 1) null else currentKey - 1,
+                    nextKey = if (games.isEmpty()) null else currentKey + 1
                 )
             } else {
-                LoadResult.Error(Exception("Invalid response format"))
+                LoadResult.Error(Exception("No data received"))
             }
         } catch (e: Exception) {
             LoadResult.Error(e)
