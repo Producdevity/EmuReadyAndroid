@@ -28,7 +28,7 @@ fun EmulatorTestScreen(
             title = { Text("Test Eden Emulator") },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                 }
             }
         )

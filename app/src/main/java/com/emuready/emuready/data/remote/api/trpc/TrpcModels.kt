@@ -16,22 +16,22 @@ data class TrpcRequestBody<T>(
 )
 
 /**
- * tRPC Response wrapper as specified in the API documentation
+ * tRPC Response wrapper - matches actual API response
  */
 @Serializable
 data class TrpcResponse<T>(
-    val `0`: TrpcResult<T>
-)
-
-@Serializable
-data class TrpcResult<T>(
     val result: TrpcData<T>? = null,
     val error: TrpcError? = null
 )
 
 @Serializable
 data class TrpcData<T>(
-    val data: T
+    val data: TrpcJsonWrapper<T>
+)
+
+@Serializable
+data class TrpcJsonWrapper<T>(
+    val json: T
 )
 
 @Serializable

@@ -30,6 +30,9 @@ fun EmuReadyNavigation(
                 },
                 onNavigateToEmulatorTest = {
                     navController.navigate(Screen.EmulatorTest.route)
+                },
+                onNavigateToBrowse = {
+                    navController.navigate(Screen.Browse.route)
                 }
             )
         }

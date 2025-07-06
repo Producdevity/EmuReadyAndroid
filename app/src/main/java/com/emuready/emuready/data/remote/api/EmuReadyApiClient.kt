@@ -26,7 +26,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object EmuReadyApiClient {
     
-    private const val BASE_URL = "https://emuready.com/api/mobile/"
+    private const val BASE_URL = "https://www.emuready.com/api/mobile/"
     
     /**
      * JSON configuration for kotlinx.serialization

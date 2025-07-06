@@ -84,7 +84,7 @@ fun ProfileScreen(
                         }
                     } else {
                         OutlinedButton(
-                            onClick = { /* Handle sign out */ },
+                            onClick = { viewModel.signOut() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Sign Out")

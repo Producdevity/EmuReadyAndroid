@@ -41,6 +41,7 @@ import java.util.*
 fun ListingsScreen(
     onNavigateToListing: (String) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToCreate: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -76,7 +77,8 @@ fun ListingsScreen(
             ListingsHeader(
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
-                onNavigateBack = onNavigateBack
+                onNavigateBack = onNavigateBack,
+                onNavigateToCreate = onNavigateToCreate
             )
         }
         
@@ -110,7 +112,8 @@ fun ListingsScreen(
         ) {
             ListingsList(
                 listings = emptyList(), // Replace with actual listings from uiState
-                onListingClick = onNavigateToListing
+                onListingClick = onNavigateToListing,
+                onNavigateToCreate = onNavigateToCreate
             )
         }
     }
@@ -120,7 +123,8 @@ fun ListingsScreen(
 private fun ListingsHeader(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToCreate: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -161,7 +165,7 @@ private fun ListingsHeader(
                 )
                 
                 IconButton(
-                    onClick = { /* Create new listing */ }
+                    onClick = { onNavigateToCreate() }
                 ) {
                     Icon(
                         Icons.Default.Add,
@@ -362,7 +366,8 @@ private fun FilterChip(
 @Composable
 private fun ListingsList(
     listings: List<Listing>,
-    onListingClick: (String) -> Unit
+    onListingClick: (String) -> Unit,
+    onNavigateToCreate: () -> Unit
 ) {
     if (listings.isNotEmpty()) {
         LazyColumn(
@@ -401,7 +406,7 @@ private fun ListingsList(
                 .padding(40.dp),
             contentAlignment = Alignment.Center
         ) {
-            EmptyListingsState()
+            EmptyListingsState(onNavigateToCreate)
         }
     }
 }
@@ -563,7 +568,7 @@ private fun ListingCard(
 }
 
 @Composable
-private fun EmptyListingsState() {
+private fun EmptyListingsState(onNavigateToCreate: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -641,7 +646,7 @@ private fun EmptyListingsState() {
             Spacer(modifier = Modifier.height(24.dp))
             
             Button(
-                onClick = { /* Create listing */ },
+                onClick = { onNavigateToCreate() },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SecondaryTeal

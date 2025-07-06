@@ -41,4 +41,28 @@ abstract class RepositoryModule {
     abstract fun bindDeviceRepository(
         deviceRepositoryImpl: DeviceRepositoryImpl
     ): DeviceRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindStatsRepository(
+        statsRepositoryImpl: StatsRepositoryImpl
+    ): StatsRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindTrustRepository(
+        trustRepositoryImpl: TrustRepositoryImpl
+    ): TrustRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindReportRepository(
+        reportRepositoryImpl: ReportRepositoryImpl
+    ): ReportRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindCustomFieldRepository(
+        customFieldRepositoryImpl: CustomFieldRepositoryImpl
+    ): CustomFieldRepository
 }

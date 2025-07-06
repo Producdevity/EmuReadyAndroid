@@ -144,8 +144,6 @@ interface EmuReadyTrpcApiService {
     @POST("trpc/general.getSearchSuggestions")
     suspend fun getSearchSuggestions(@Body request: TrpcRequest<SearchSuggestionsRequest>): TrpcResponse<List<MobileSearchSuggestion>>
     
-    @POST("trpc/general.getTrustLevels")
-    suspend fun getTrustLevels(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileTrustLevel>>
     
     // Notifications endpoints
     @POST("trpc/notifications.getNotifications")
@@ -184,6 +182,100 @@ interface EmuReadyTrpcApiService {
     
     @POST("trpc/preferences.updateProfile")
     suspend fun updateUserProfile(@Body request: TrpcRequest<UpdateProfileSchema>): TrpcResponse<MobileUserProfile>
+    
+    // Developer Verification endpoints
+    @POST("trpc/developers.getMyVerifiedEmulators")
+    suspend fun getMyVerifiedEmulators(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileEmulator>>
+    
+    @POST("trpc/developers.isVerifiedDeveloper")
+    suspend fun isVerifiedDeveloper(@Body request: TrpcRequest<EmulatorIdRequest>): TrpcResponse<SuccessResponse>
+    
+    @POST("trpc/developers.verifyListing")
+    suspend fun verifyListing(@Body request: TrpcRequest<VerifyListingRequest>): TrpcResponse<MobileVerification>
+    
+    @POST("trpc/developers.removeVerification")
+    suspend fun removeVerification(@Body request: TrpcRequest<IdRequest>): TrpcResponse<SuccessResponse>
+    
+    @POST("trpc/developers.getListingVerifications")
+    suspend fun getListingVerifications(@Body request: TrpcRequest<ListingIdRequest>): TrpcResponse<MobileListingVerificationsResponse>
+    
+    @POST("trpc/developers.getMyVerifications")
+    suspend fun getMyVerifications(@Body request: TrpcRequest<PaginationRequest>): TrpcResponse<List<MobileVerification>>
+    
+    // Trust System endpoints
+    @POST("trpc/trust.getMyTrustInfo")
+    suspend fun getMyTrustInfo(@Body request: TrpcRequest<Unit>): TrpcResponse<TrustInfo>
+    
+    @POST("trpc/trust.getUserTrustInfo")
+    suspend fun getUserTrustInfo(@Body request: TrpcRequest<UserIdRequest>): TrpcResponse<TrustInfo>
+    
+    @POST("trpc/trust.getTrustLevels")
+    suspend fun getTrustLevels(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileTrustLevel>>
+    
+    // Content Reporting endpoints
+    @POST("trpc/listingReports.create")
+    suspend fun createListingReport(@Body request: TrpcRequest<CreateListingReportSchema>): TrpcResponse<ListingReportResponse>
+    
+    @POST("trpc/listingReports.checkUserHasReports")
+    suspend fun checkUserHasReports(@Body request: TrpcRequest<UserIdRequest>): TrpcResponse<UserReportsInfo>
+    
+    // Custom Fields endpoints
+    @POST("trpc/customFieldDefinitions.getByEmulator")
+    suspend fun getCustomFieldsByEmulator(@Body request: TrpcRequest<EmulatorIdRequest>): TrpcResponse<List<MobileCustomFieldDefinition>>
+    
+    // Enhanced Hardware endpoints
+    @POST("trpc/cpus.get")
+    suspend fun getCpusEnhanced(@Body request: TrpcRequest<GetCpusSchema>): TrpcResponse<HardwarePaginationResponse<MobileCpu>>
+    
+    @POST("trpc/cpus.getById")
+    suspend fun getCpuById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileCpu>
+    
+    @POST("trpc/gpus.get")
+    suspend fun getGpusEnhanced(@Body request: TrpcRequest<GetGpusSchema>): TrpcResponse<HardwarePaginationResponse<MobileGpu>>
+    
+    @POST("trpc/gpus.getById")
+    suspend fun getGpuById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileGpu>
+    
+    @POST("trpc/socs.get")
+    suspend fun getSocsEnhanced(@Body request: TrpcRequest<GetSoCsSchema>): TrpcResponse<HardwarePaginationResponse<MobileSoc>>
+    
+    @POST("trpc/socs.getById")
+    suspend fun getSocById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileSoc>
+    
+    @POST("trpc/deviceBrands.get")
+    suspend fun getDeviceBrandsEnhanced(@Body request: TrpcRequest<GetDeviceBrandsSchema>): TrpcResponse<List<MobileDeviceBrand>>
+    
+    @POST("trpc/deviceBrands.getById")
+    suspend fun getDeviceBrandById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileDeviceBrand>
+    
+    // External Game Data endpoints
+    @POST("trpc/rawg.searchGameImages")
+    suspend fun searchRawgGameImages(@Body request: TrpcRequest<SearchGameImagesSchema>): TrpcResponse<Map<String, List<GameImageOption>>>
+    
+    @POST("trpc/rawg.searchGames")
+    suspend fun searchRawgGames(@Body request: TrpcRequest<SearchGamesSchema>): TrpcResponse<RawgGameResponse>
+    
+    @POST("trpc/rawg.getGameImages")
+    suspend fun getRawgGameImages(@Body request: TrpcRequest<GetGameImagesRequest>): TrpcResponse<List<GameImageOption>>
+    
+    @POST("trpc/tgdb.searchGameImages")
+    suspend fun searchTgdbGameImages(@Body request: TrpcRequest<SearchTgdbGameImagesRequest>): TrpcResponse<Map<String, List<GameImageOption>>>
+    
+    @POST("trpc/tgdb.searchGames")
+    suspend fun searchTgdbGames(@Body request: TrpcRequest<SearchTgdbGamesRequest>): TrpcResponse<TgdbGameResponse>
+    
+    @POST("trpc/tgdb.getGameImageUrls")
+    suspend fun getTgdbGameImageUrls(@Body request: TrpcRequest<GetTgdbGameImageUrlsRequest>): TrpcResponse<GameImageUrls>
+    
+    @POST("trpc/tgdb.getGameImages")
+    suspend fun getTgdbGameImages(@Body request: TrpcRequest<GetTgdbGameImagesRequest>): TrpcResponse<Any>
+    
+    @POST("trpc/tgdb.getPlatforms")
+    suspend fun getTgdbPlatforms(@Body request: TrpcRequest<Unit>): TrpcResponse<List<TgdbPlatform>>
+    
+    // Enhanced User Profile endpoints
+    @POST("trpc/users.getUserById")
+    suspend fun getUserById(@Body request: TrpcRequest<GetUserByIdSchema>): TrpcResponse<EnhancedMobileUserProfile>
 }
 
 // Request DTOs for specific endpoint parameters
@@ -312,4 +404,52 @@ data class UpdateProfileSchema(
     val name: String? = null,
     val bio: String? = null,
     val email: String? = null
+)
+
+// Additional Request DTOs for new endpoints
+
+@kotlinx.serialization.Serializable
+data class EmulatorIdRequest(
+    val emulatorId: String
+)
+
+@kotlinx.serialization.Serializable
+data class VerifyListingRequest(
+    val listingId: String,
+    val notes: String? = null
+)
+
+@kotlinx.serialization.Serializable
+data class PaginationRequest(
+    val limit: Int? = 20,
+    val page: Int? = 1
+)
+
+@kotlinx.serialization.Serializable
+data class GetGameImagesRequest(
+    val gameId: Int,
+    val gameName: String
+)
+
+@kotlinx.serialization.Serializable
+data class SearchTgdbGameImagesRequest(
+    val query: String,
+    val tgdbPlatformId: Int
+)
+
+@kotlinx.serialization.Serializable
+data class SearchTgdbGamesRequest(
+    val query: String,
+    val tgdbPlatformId: Int,
+    val page: Int? = null
+)
+
+@kotlinx.serialization.Serializable
+data class GetTgdbGameImageUrlsRequest(
+    val gameId: Int
+)
+
+@kotlinx.serialization.Serializable
+data class GetTgdbGameImagesRequest(
+    val gameIds: List<Int>
 )

@@ -22,6 +22,7 @@ android {
         vectorDrawables.useSupportLibrary = true
 
         buildConfigField("String", "API_BASE_URL", "\"https://emuready.com/\"")
+        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
     }
 
     signingConfigs {
@@ -46,6 +47,7 @@ android {
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("release")
             buildConfigField("String", "API_BASE_URL", "\"https://emuready.com/\"")
+        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -56,6 +58,7 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             buildConfigField("String", "API_BASE_URL", "\"https://emuready.com/\"")
+        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
         }
     }
 
@@ -140,9 +143,6 @@ dependencies {
     // Security
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.biometric)
-    
-    // Authentication
-    implementation(libs.clerk.android)
 
     // Testing
     testImplementation(libs.junit)

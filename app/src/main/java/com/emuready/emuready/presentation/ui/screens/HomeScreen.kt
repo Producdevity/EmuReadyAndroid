@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.emuready.emuready.presentation.components.cards.EnhancedGameCard
 import com.emuready.emuready.presentation.ui.theme.*
 import com.emuready.emuready.presentation.viewmodels.HomeViewModel
+import com.emuready.emuready.presentation.viewmodels.HomeUiState
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,6 +40,7 @@ fun HomeScreen(
     onNavigateToGame: (String) -> Unit,
     onNavigateToCreate: () -> Unit,
     onNavigateToEmulatorTest: () -> Unit,
+    onNavigateToBrowse: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -110,7 +112,8 @@ fun HomeScreen(
             ) {
                 FeaturedGamesSection(
                     games = uiState.featuredGames,
-                    onGameClick = onNavigateToGame
+                    onGameClick = onNavigateToGame,
+                    onNavigateToBrowse = onNavigateToBrowse
                 )
             }
         }
@@ -126,7 +129,7 @@ fun HomeScreen(
                     )
                 )
             ) {
-                StatsOverviewSection()
+                StatsOverviewSection(uiState)
             }
         }
         
@@ -362,7 +365,8 @@ private fun QuickActionCard(
 @Composable
 private fun FeaturedGamesSection(
     games: List<com.emuready.emuready.domain.entities.Game>,
-    onGameClick: (String) -> Unit
+    onGameClick: (String) -> Unit,
+    onNavigateToBrowse: () -> Unit
 ) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp)
@@ -379,7 +383,7 @@ private fun FeaturedGamesSection(
             )
             
             TextButton(
-                onClick = { /* Navigate to all games */ }
+                onClick = { onNavigateToBrowse() }
             ) {
                 Text(
                     text = "See All",
@@ -430,7 +434,7 @@ private fun FeaturedGamesSection(
 }
 
 @Composable
-private fun StatsOverviewSection() {
+private fun StatsOverviewSection(uiState: HomeUiState) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp)
     ) {
@@ -447,7 +451,7 @@ private fun StatsOverviewSection() {
         ) {
             StatCard(
                 title = "Games",
-                value = "1,245",
+                value = uiState.stats?.totalGames?.let { "$it" } ?: "...",
                 subtitle = "in database",
                 color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f)
@@ -455,7 +459,7 @@ private fun StatsOverviewSection() {
             
             StatCard(
                 title = "Devices",
-                value = "18",
+                value = uiState.stats?.totalDevices?.let { "$it" } ?: "...",
                 subtitle = "supported",
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f)
@@ -463,7 +467,7 @@ private fun StatsOverviewSection() {
             
             StatCard(
                 title = "Listings",
-                value = "3,892",
+                value = uiState.stats?.totalListings?.let { "$it" } ?: "...",
                 subtitle = "active",
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.weight(1f)

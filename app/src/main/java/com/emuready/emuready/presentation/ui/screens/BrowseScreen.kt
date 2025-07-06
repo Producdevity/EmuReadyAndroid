@@ -524,7 +524,7 @@ private fun GameCard(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.List,
+                                    imageVector = Icons.Default.List,
                                     contentDescription = null,
                                     modifier = Modifier.size(14.dp),
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer

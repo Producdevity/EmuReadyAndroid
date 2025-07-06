@@ -23,37 +23,57 @@ class GamesPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Game> {
         return try {
             val page = params.key ?: 1
-            val pageSize = params.loadSize
+            val pageSize = minOf(params.loadSize, 50) // API max limit is 50
             
-            // Map SortOption to API sort parameter
-            val apiSort = when (sortBy) {
-                SortOption.POPULARITY -> "popularity"
-                SortOption.ALPHABETICAL -> "title"
-                SortOption.RATING -> "rating"
-                SortOption.DATE_ADDED -> "date"
-                SortOption.LISTING_COUNT -> "listings"
+            // Use appropriate API endpoint based on sort option and search
+            val response = when {
+                sortBy == SortOption.POPULARITY && search.isNullOrBlank() -> {
+                    val request = requestBuilder.buildQuery(com.emuready.emuready.data.remote.api.LimitRequest(limit = pageSize))
+                    trpcApiService.getPopularGames(request)
+                }
+                !search.isNullOrBlank() -> {
+                    val request = requestBuilder.buildQuery(com.emuready.emuready.data.remote.api.QueryRequest(search))
+                    trpcApiService.searchGames(request)
+                }
+                else -> {
+                    val request = requestBuilder.buildQuery(
+                        GetGamesSchema(
+                            search = search,
+                            systemId = systemIds.firstOrNull(),
+                            limit = pageSize
+                        )
+                    )
+                    trpcApiService.getGames(request)
+                }
             }
             
-            val request = requestBuilder.buildQuery(
-                GetGamesSchema(
-                    search = search,
-                    systemId = systemIds.firstOrNull(), // API might only support single system filter
-                    limit = pageSize
-                )
-            )
-            
-            val response = trpcApiService.getGames(request)
-            val result = response.`0`
-            
-            if (result.error != null) {
-                LoadResult.Error(Exception(result.error.message))
-            } else if (result.result?.data != null) {
-                val games = result.result.data.map { it.toDomain() }
+            if (response.error != null) {
+                LoadResult.Error(Exception(response.error.message))
+            } else if (response.result?.data?.json != null) {
+                var games = response.result.data.json.map { it.toDomain() }
+                
+                // Apply client-side filtering since API doesn't support all filters
+                if (deviceIds.isNotEmpty() || emulatorIds.isNotEmpty() || performanceIds.isNotEmpty()) {
+                    // Note: These filters would require additional API calls to get listing data
+                    // For now, we'll show all games and let the user filter on the detail page
+                }
+                
+                // Apply client-side sorting for non-popularity sorts
+                when (sortBy) {
+                    SortOption.ALPHABETICAL -> games = games.sortedBy { it.title }
+                    SortOption.RATING -> games = games.sortedByDescending { it.averageRating }
+                    SortOption.LISTING_COUNT -> games = games.sortedByDescending { it.listingCount }
+                    SortOption.POPULARITY -> { /* Already sorted by API */ }
+                    SortOption.DATE_ADDED -> { /* Use default order */ }
+                }
+                
+                // Simple pagination: return all results on first page, empty on subsequent pages
+                val finalGames = if (page == 1) games else emptyList()
                 
                 LoadResult.Page(
-                    data = games,
+                    data = finalGames,
                     prevKey = if (page == 1) null else page - 1,
-                    nextKey = if (games.isEmpty() || games.size < pageSize) null else page + 1
+                    nextKey = if (finalGames.isEmpty() || page > 1) null else page + 1
                 )
             } else {
                 LoadResult.Error(Exception("Invalid response format"))

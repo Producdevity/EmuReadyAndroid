@@ -3,8 +3,10 @@ package com.emuready.emuready.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.emuready.emuready.domain.entities.Game
+import com.emuready.emuready.domain.usecases.AppStats
 import com.emuready.emuready.domain.usecases.GetFeaturedGamesUseCase
 import com.emuready.emuready.domain.usecases.GetRecentGamesUseCase
+import com.emuready.emuready.domain.usecases.GetStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,13 +16,15 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val featuredGames: List<Game> = emptyList(),
     val recentGames: List<Game> = emptyList(),
+    val stats: AppStats? = null,
     val error: String? = null
 )
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getFeaturedGamesUseCase: GetFeaturedGamesUseCase,
-    private val getRecentGamesUseCase: GetRecentGamesUseCase
+    private val getRecentGamesUseCase: GetRecentGamesUseCase,
+    private val getStatsUseCase: GetStatsUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -38,6 +42,14 @@ class HomeViewModel @Inject constructor(
             getRecentGamesUseCase().collect { recentGames ->
                 _uiState.value = _uiState.value.copy(recentGames = recentGames)
             }
+            
+            // Load stats from API
+            getStatsUseCase().fold(
+                onSuccess = { stats ->
+                    _uiState.value = _uiState.value.copy(stats = stats)
+                },
+                onFailure = { /* Ignore stats error for now */ }
+            )
             
             // Try to load featured games from API
             getFeaturedGamesUseCase().fold(
