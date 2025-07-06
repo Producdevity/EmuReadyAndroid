@@ -28,7 +28,7 @@ data class Game(
             genres = emptyList(),
             averageCompatibility = 0f,
             totalListings = 0,
-            lastUpdated = System.currentTimeMillis(),
+            lastUpdated = java.lang.System.currentTimeMillis(),
             isFavorite = false
         )
     }

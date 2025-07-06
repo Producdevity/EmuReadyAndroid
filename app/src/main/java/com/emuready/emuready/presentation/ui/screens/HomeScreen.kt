@@ -58,9 +58,9 @@ fun HomeScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Background,
-                        Background.copy(alpha = 0.95f),
-                        SurfaceVariant.copy(alpha = 0.1f)
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                     )
                 )
             ),
@@ -169,11 +169,11 @@ private fun HeroSection(
                 .shadow(
                     elevation = 12.dp,
                     shape = RoundedCornerShape(24.dp),
-                    spotColor = PrimaryPurple.copy(alpha = 0.25f)
+                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
                 ),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
-                containerColor = SurfaceElevated
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Box {
@@ -185,8 +185,8 @@ private fun HeroSection(
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
-                                    PrimaryPurple.copy(alpha = 0.1f),
-                                    SecondaryTeal.copy(alpha = 0.05f),
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f),
                                     Color.Transparent
                                 ),
                                 radius = 800f
@@ -201,7 +201,7 @@ private fun HeroSection(
                     Text(
                         text = "Welcome to EmuReady",
                         style = MaterialTheme.typography.displaySmall.copy(
-                            color = Primary
+                            color = MaterialTheme.colorScheme.primary
                         ),
                         textAlign = TextAlign.Center
                     )
@@ -211,7 +211,7 @@ private fun HeroSection(
                     Text(
                         text = "Your premium companion for gaming handheld compatibility",
                         style = CustomTextStyles.HeroTagline,
-                        color = OnSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                     
@@ -248,25 +248,30 @@ private fun QuickActionsSection() {
         Text(
             text = "Quick Actions",
             style = MaterialTheme.typography.headlineSmall,
-            color = OnBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
-        Row(
+        val quickActions = listOf(
+            Triple("Browse Games", Icons.Default.Search, MaterialTheme.colorScheme.tertiary),
+            Triple("My Listings", Icons.Default.List, MaterialTheme.colorScheme.secondary),
+            Triple("Favorites", Icons.Default.Favorite, MaterialTheme.colorScheme.error),
+            Triple("Settings", Icons.Default.Settings, MaterialTheme.colorScheme.onSurfaceVariant),
+            Triple("Notifications", Icons.Default.Notifications, MaterialTheme.colorScheme.primary),
+            Triple("Help", Icons.Default.Info, MaterialTheme.colorScheme.outline)
+        )
+        
+        LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
-            listOf(
-                Triple("Browse Games", Icons.Default.Search, AccentOrange),
-                Triple("My Listings", Icons.Default.List, SecondaryTeal),
-                Triple("Favorites", Icons.Default.Favorite, AccentPink),
-                Triple("Settings", Icons.Default.Settings, NeutralGray600)
-            ).forEachIndexed { index, (title, icon, color) ->
+            itemsIndexed(quickActions) { index, (title, icon, color) ->
                 QuickActionCard(
                     title = title,
                     icon = icon,
                     color = color,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.width(120.dp), // Fixed width instead of weight
                     animationDelay = index * 50L
                 )
             }
@@ -316,7 +321,7 @@ private fun QuickActionCard(
                 ),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = SurfaceElevated
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
@@ -345,7 +350,7 @@ private fun QuickActionCard(
                 Text(
                     text = title,
                     style = CustomTextStyles.Caption,
-                    color = OnSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                     maxLines = 2
                 )
@@ -370,7 +375,7 @@ private fun FeaturedGamesSection(
             Text(
                 text = "Featured Games",
                 style = MaterialTheme.typography.headlineSmall,
-                color = OnBackground
+                color = MaterialTheme.colorScheme.onBackground
             )
             
             TextButton(
@@ -379,7 +384,7 @@ private fun FeaturedGamesSection(
                 Text(
                     text = "See All",
                     style = CustomTextStyles.ButtonText,
-                    color = Primary
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -432,7 +437,7 @@ private fun StatsOverviewSection() {
         Text(
             text = "Overview",
             style = MaterialTheme.typography.headlineSmall,
-            color = OnBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
@@ -444,7 +449,7 @@ private fun StatsOverviewSection() {
                 title = "Games",
                 value = "1,245",
                 subtitle = "in database",
-                color = AccentOrange,
+                color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f)
             )
             
@@ -452,7 +457,7 @@ private fun StatsOverviewSection() {
                 title = "Devices",
                 value = "18",
                 subtitle = "supported",
-                color = SecondaryTeal,
+                color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f)
             )
             
@@ -460,7 +465,7 @@ private fun StatsOverviewSection() {
                 title = "Listings",
                 value = "3,892",
                 subtitle = "active",
-                color = AccentPink,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -498,7 +503,7 @@ private fun StatCard(
             ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceElevated
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
@@ -515,13 +520,13 @@ private fun StatCard(
             Text(
                 text = title,
                 style = CustomTextStyles.CardAccent,
-                color = OnSurface
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Text(
                 text = subtitle,
                 style = CustomTextStyles.Caption,
-                color = OnSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -535,7 +540,7 @@ private fun RecentActivitySection() {
         Text(
             text = "Recent Activity",
             style = MaterialTheme.typography.headlineSmall,
-            color = OnBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
@@ -559,11 +564,11 @@ private fun EmptyStateCard(
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(16.dp),
-                spotColor = NeutralGray400.copy(alpha = 0.15f)
+                spotColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
             ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceElevated
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
@@ -572,7 +577,7 @@ private fun EmptyStateCard(
         ) {
             Surface(
                 shape = CircleShape,
-                color = NeutralGray200.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(64.dp)
             ) {
                 Box(
@@ -581,7 +586,7 @@ private fun EmptyStateCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = title,
-                        tint = NeutralGray500,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -592,7 +597,7 @@ private fun EmptyStateCard(
             Text(
                 text = title,
                 style = CustomTextStyles.GameTitle,
-                color = OnSurface,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
             
@@ -601,7 +606,7 @@ private fun EmptyStateCard(
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = OnSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
         }
@@ -636,11 +641,11 @@ private fun PremiumButton(
                 .shadow(
                     elevation = 8.dp,
                     shape = RoundedCornerShape(12.dp),
-                    spotColor = Primary.copy(alpha = 0.25f)
+                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
                 ),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Primary
+                containerColor = MaterialTheme.colorScheme.primary
             ),
             interactionSource = interactionSource
         ) {
@@ -661,7 +666,7 @@ private fun PremiumButton(
             shape = RoundedCornerShape(12.dp),
             border = ButtonDefaults.outlinedButtonBorder.copy(
                 brush = Brush.linearGradient(
-                    colors = listOf(Primary, SecondaryTeal)
+                    colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
                 )
             ),
             interactionSource = interactionSource
@@ -669,7 +674,7 @@ private fun PremiumButton(
             Text(
                 text = text,
                 style = CustomTextStyles.ButtonText,
-                color = Primary,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 4.dp)
             )
         }
