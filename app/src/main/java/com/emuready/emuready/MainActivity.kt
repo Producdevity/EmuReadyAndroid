@@ -59,7 +59,8 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     EmuReadyNavigation(
                         navController = navController,
-                        startDestination = Screen.Home.route
+                        startDestination = Screen.Home.route,
+                        modifier = Modifier.padding(innerPadding)
                     )
                 }
             }

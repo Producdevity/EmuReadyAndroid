@@ -1,6 +1,7 @@
 package com.emuready.emuready.data.remote.api.auth
 
 import android.content.Context
+import com.clerk.android.Clerk
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -44,29 +45,35 @@ class ClerkAuthInterceptor @Inject constructor(
     
     /**
      * Get Clerk token from the Clerk SDK
-     * This method will need to be implemented when Clerk Android SDK is integrated
-     * 
-     * For now, returning null - this should be replaced with:
-     * return Clerk.shared.session?.getToken()
      */
     private fun getClerkToken(): String? {
-        // TODO: Implement Clerk Android SDK integration
-        // return Clerk.shared.session?.getToken()
-        return null
+        return try {
+            Clerk.shared.session?.getToken()
+        } catch (e: Exception) {
+            // Return null if Clerk is not initialized or session is invalid
+            null
+        }
     }
     
     /**
      * Check if user is authenticated
      */
     fun isAuthenticated(): Boolean {
-        return getClerkToken() != null
+        return try {
+            Clerk.shared.session != null && getClerkToken() != null
+        } catch (e: Exception) {
+            false
+        }
     }
     
     /**
      * Sign out user (clear Clerk session)
      */
     suspend fun signOut() {
-        // TODO: Implement with Clerk SDK
-        // Clerk.shared.signOut()
+        try {
+            Clerk.shared.signOut()
+        } catch (e: Exception) {
+            // Handle sign out error
+        }
     }
 }

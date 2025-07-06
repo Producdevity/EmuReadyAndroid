@@ -12,12 +12,16 @@ import com.emuready.emuready.data.remote.dto.*
 import com.emuready.emuready.data.remote.api.IdRequest
 import com.emuready.emuready.data.remote.api.LimitRequest
 import com.emuready.emuready.data.remote.api.QueryRequest
+import com.emuready.emuready.data.paging.GamesPagingSource
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.domain.entities.GameDetail
 import com.emuready.emuready.domain.entities.GameSortOption
 import com.emuready.emuready.domain.exceptions.ApiException
 import com.emuready.emuready.domain.exceptions.NetworkException
 import com.emuready.emuready.domain.repositories.GameRepository
+import com.emuready.emuready.presentation.viewmodels.SortOption
+import com.emuready.emuready.presentation.viewmodels.FilterType
+import com.emuready.emuready.presentation.ui.screens.FilterOption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.Dispatchers
@@ -37,11 +41,30 @@ class GameRepositoryImpl @Inject constructor(
     
     override fun getGames(
         search: String?,
-        genre: String?,
-        sortBy: GameSortOption
+        sortBy: SortOption,
+        systemIds: Set<String>,
+        deviceIds: Set<String>,
+        emulatorIds: Set<String>,
+        performanceIds: Set<String>
     ): Flow<PagingData<Game>> {
-        // For now, return empty flow until paging source is implemented
-        return kotlinx.coroutines.flow.flowOf(androidx.paging.PagingData.empty())
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                GamesPagingSource(
+                    trpcApiService = trpcApiService,
+                    requestBuilder = requestBuilder,
+                    search = search,
+                    sortBy = sortBy,
+                    systemIds = systemIds,
+                    deviceIds = deviceIds,
+                    emulatorIds = emulatorIds,
+                    performanceIds = performanceIds
+                )
+            }
+        ).flow
     }
     
     override suspend fun getGameDetail(gameId: String): Result<GameDetail> = withContext(Dispatchers.IO) {
@@ -165,6 +188,72 @@ class GameRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
+    
+    override suspend fun getAvailableFilters(): Map<FilterType, List<FilterOption>> = withContext(Dispatchers.IO) {
+        try {
+            // Fetch all the filter options from the API
+            val systemsRequest = requestBuilder.buildQuery(Unit)
+            val devicesRequest = requestBuilder.buildQuery(GetDevicesSchema(limit = 100))
+            val emulatorsRequest = requestBuilder.buildQuery(GetEmulatorsSchema(limit = 100))
+            val performanceRequest = requestBuilder.buildQuery(Unit)
+            
+            val systemsResponse = trpcApiService.getSystems(systemsRequest)
+            val devicesResponse = trpcApiService.getDevices(devicesRequest)
+            val emulatorsResponse = trpcApiService.getEmulators(emulatorsRequest)
+            val performanceResponse = trpcApiService.getPerformanceScales(performanceRequest)
+            
+            val filters = mutableMapOf<FilterType, List<FilterOption>>()
+            
+            // Systems
+            systemsResponse.`0`.result?.data?.let { systems ->
+                filters[FilterType.SYSTEM] = systems.map { system ->
+                    FilterOption(
+                        id = system.id,
+                        name = system.name,
+                        count = 0 // Systems don't have direct listing counts in the API
+                    )
+                }
+            }
+            
+            // Devices
+            devicesResponse.`0`.result?.data?.let { devices ->
+                filters[FilterType.DEVICE] = devices.map { device ->
+                    FilterOption(
+                        id = device.id,
+                        name = device.modelName,
+                        count = device._count.listings
+                    )
+                }
+            }
+            
+            // Emulators
+            emulatorsResponse.`0`.result?.data?.let { emulators ->
+                filters[FilterType.EMULATOR] = emulators.map { emulator ->
+                    FilterOption(
+                        id = emulator.id,
+                        name = emulator.name,
+                        count = emulator._count.listings
+                    )
+                }
+            }
+            
+            // Performance
+            performanceResponse.`0`.result?.data?.let { performance ->
+                filters[FilterType.PERFORMANCE] = performance.map { perf ->
+                    FilterOption(
+                        id = perf.id.toString(),
+                        name = perf.label,
+                        count = 0 // Performance scales don't have direct listing counts in the API
+                    )
+                }
+            }
+            
+            filters
+        } catch (e: Exception) {
+            // Return empty filters on error
+            emptyMap()
         }
     }
     

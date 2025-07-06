@@ -140,6 +140,9 @@ dependencies {
     // Security
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.biometric)
+    
+    // Authentication
+    implementation(libs.clerk.android)
 
     // Testing
     testImplementation(libs.junit)

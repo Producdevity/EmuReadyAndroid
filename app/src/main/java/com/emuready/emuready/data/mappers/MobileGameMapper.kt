@@ -25,7 +25,10 @@ fun MobileGame.toDomain(): Game {
         averageCompatibility = 0.0f, // Not provided, will be calculated from listings
         totalListings = this._count.listings,
         lastUpdated = java.lang.System.currentTimeMillis(),
-        isFavorite = false // This would be determined from local database
+        isFavorite = false, // This would be determined from local database
+        system = this.system?.toDomain(),
+        listingCount = this._count.listings,
+        averageRating = 0.0f // Not provided in mobile API, would be calculated from ratings
     )
 }
 

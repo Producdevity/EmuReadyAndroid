@@ -14,7 +14,10 @@ data class Game(
     val averageCompatibility: Float,
     val totalListings: Int,
     val lastUpdated: Long,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val system: System? = null,
+    val listingCount: Int = 0,
+    val averageRating: Float = 0f
 ) {
     companion object {
         fun empty() = Game(
@@ -29,7 +32,10 @@ data class Game(
             averageCompatibility = 0f,
             totalListings = 0,
             lastUpdated = java.lang.System.currentTimeMillis(),
-            isFavorite = false
+            isFavorite = false,
+            system = null,
+            listingCount = 0,
+            averageRating = 0f
         )
     }
 }

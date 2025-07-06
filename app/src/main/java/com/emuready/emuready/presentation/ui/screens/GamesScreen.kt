@@ -100,7 +100,7 @@ fun GamesScreen(
             )
         ) {
             GamesGrid(
-                games = uiState.games,
+                games = emptyList(), // Using empty list for now since this screen is deprecated
                 onGameClick = onNavigateToGame
             )
         }
