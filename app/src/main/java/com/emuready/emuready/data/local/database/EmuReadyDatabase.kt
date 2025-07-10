@@ -12,7 +12,6 @@ import com.emuready.emuready.data.local.entities.*
 @Database(
     entities = [
         GameEntity::class,
-        GameListingEntity::class,
         UserEntity::class,
         DeviceEntity::class
     ],
@@ -22,7 +21,6 @@ import com.emuready.emuready.data.local.entities.*
 @TypeConverters(Converters::class)
 abstract class EmuReadyDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
-    abstract fun listingDao(): GameListingDao
     abstract fun userDao(): UserDao
     abstract fun deviceDao(): DeviceDao
     
@@ -42,9 +40,8 @@ abstract class EmuReadyDatabase : RoomDatabase() {
                         super.onCreate(db)
                         // Create indexes for better query performance
                         db.execSQL("CREATE INDEX IF NOT EXISTS index_games_title ON games(title)")
-                        db.execSQL("CREATE INDEX IF NOT EXISTS index_listings_game_id ON game_listings(gameId)")
-                        db.execSQL("CREATE INDEX IF NOT EXISTS index_listings_device_id ON game_listings(deviceId)")
-                        db.execSQL("CREATE INDEX IF NOT EXISTS index_listings_user_id ON game_listings(userId)")
+                        db.execSQL("CREATE INDEX IF NOT EXISTS index_users_username ON users(username)")
+                        db.execSQL("CREATE INDEX IF NOT EXISTS index_devices_name ON devices(name)")
                     }
                 })
                 .build()

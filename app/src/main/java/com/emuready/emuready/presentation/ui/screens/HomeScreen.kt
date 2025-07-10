@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.emuready.emuready.presentation.components.cards.EnhancedGameCard
 import com.emuready.emuready.presentation.ui.theme.*
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.emuready.emuready.presentation.viewmodels.HomeViewModel
 import com.emuready.emuready.presentation.viewmodels.HomeUiState
 import kotlinx.coroutines.delay
@@ -50,7 +52,7 @@ fun HomeScreen(
     var isVisible by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
-        delay(100)
+        delay(EmuAnimations.Duration.STAGGER_DELAY)
         isVisible = true
     }
     
@@ -72,8 +74,8 @@ fun HomeScreen(
         item {
             AnimatedVisibility(
                 visible = isVisible,
-                enter = fadeIn(animationSpec = tween(AnimationDurations.NORMAL, easing = EasingCurves.Smooth)) + slideInVertically(
-                    animationSpec = tween(AnimationDurations.HERO, easing = EasingCurves.iOSEaseInOut),
+                enter = fadeIn(animationSpec = tween(EmuAnimations.Duration.NORMAL, easing = EmuAnimations.SmoothEasing)) + slideInVertically(
+                    animationSpec = tween(EmuAnimations.Duration.HERO, easing = EmuAnimations.PremiumEaseInOut),
                     initialOffsetY = { -it / 2 }
                 )
             ) {
@@ -90,8 +92,8 @@ fun HomeScreen(
                 visible = isVisible,
                 enter = fadeIn(
                     animationSpec = tween(
-                        durationMillis = AnimationDurations.NORMAL,
-                        delayMillis = StaggerAnimations.ItemDelay.toInt()
+                        durationMillis = EmuAnimations.Duration.NORMAL,
+                        delayMillis = EmuAnimations.Duration.STAGGER_DELAY.toInt()
                     )
                 )
             ) {
@@ -105,8 +107,8 @@ fun HomeScreen(
                 visible = isVisible,
                 enter = fadeIn(
                     animationSpec = tween(
-                        durationMillis = AnimationDurations.NORMAL,
-                        delayMillis = (StaggerAnimations.ItemDelay * 2).toInt()
+                        durationMillis = EmuAnimations.Duration.NORMAL,
+                        delayMillis = (EmuAnimations.Duration.STAGGER_DELAY * 2).toInt()
                     )
                 )
             ) {
@@ -144,6 +146,7 @@ fun HomeScreen(
                     )
                 )
             ) {
+                // RecentActivitySection(uiState.recentGames, onNavigateToGame) // TODO: Implement RecentActivitySection
                 RecentActivitySection()
             }
         }
@@ -537,7 +540,7 @@ private fun StatCard(
 }
 
 @Composable
-private fun RecentActivitySection() {
+fun RecentActivitySection() {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp)
     ) {
@@ -691,3 +694,4 @@ private fun PremiumButton(
         }
     }
 }
+

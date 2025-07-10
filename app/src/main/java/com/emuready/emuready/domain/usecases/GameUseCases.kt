@@ -4,6 +4,8 @@ import androidx.paging.PagingData
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.domain.entities.GameDetail
 import com.emuready.emuready.domain.entities.GameSortOption
+import com.emuready.emuready.domain.entities.Cpu
+import com.emuready.emuready.domain.entities.Gpu
 import com.emuready.emuready.domain.repositories.GameRepository
 import com.emuready.emuready.presentation.viewmodels.SortOption
 import com.emuready.emuready.presentation.viewmodels.FilterType
@@ -86,5 +88,51 @@ class GetFiltersUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(): Map<FilterType, List<FilterOption>> {
         return gameRepository.getAvailableFilters()
+    }
+}
+
+class GetFilteredGamesUseCase @Inject constructor(
+    private val gameRepository: GameRepository
+) {
+    operator fun invoke(
+        search: String? = null,
+        sortBy: SortOption = SortOption.POPULARITY,
+        systemIds: Set<String> = emptySet(),
+        deviceIds: Set<String> = emptySet(),
+        emulatorIds: Set<String> = emptySet(),
+        performanceIds: Set<String> = emptySet()
+    ): Flow<PagingData<Game>> {
+        return gameRepository.getGamesFromFilteredListings(
+            search = search,
+            sortBy = sortBy,
+            systemIds = systemIds,
+            deviceIds = deviceIds,
+            emulatorIds = emulatorIds,
+            performanceIds = performanceIds
+        )
+    }
+}
+
+class SearchGamesUseCase @Inject constructor(
+    private val gameRepository: GameRepository
+) {
+    suspend operator fun invoke(query: String): Result<List<Game>> {
+        return gameRepository.searchGames(query)
+    }
+}
+
+class GetCpusUseCase @Inject constructor(
+    private val gameRepository: GameRepository
+) {
+    suspend operator fun invoke(search: String? = null, brandId: String? = null, limit: Int? = null): Result<List<Cpu>> {
+        return gameRepository.getCpus(search, brandId, limit)
+    }
+}
+
+class GetGpusUseCase @Inject constructor(
+    private val gameRepository: GameRepository
+) {
+    suspend operator fun invoke(search: String? = null, brandId: String? = null, limit: Int? = null): Result<List<Gpu>> {
+        return gameRepository.getGpus(search, brandId, limit)
     }
 }

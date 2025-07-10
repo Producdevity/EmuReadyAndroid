@@ -27,20 +27,24 @@ class DeviceDetectionService @Inject constructor(
             val memoryInfo = getMemoryInfo()
             val deviceType = detectDeviceType()
             
+            // Create Device entity with correct parameters
             Device(
                 id = generateDeviceId(),
                 name = getDeviceName(),
-                type = deviceType,
                 manufacturer = Build.MANUFACTURER,
                 model = Build.MODEL,
-                cpuArchitecture = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
-                cpuInfo = cpuInfo,
-                totalMemoryMB = memoryInfo.totalMemoryMB,
-                availableMemoryMB = memoryInfo.availableMemoryMB,
-                androidVersion = Build.VERSION.RELEASE,
-                apiLevel = Build.VERSION.SDK_INT,
-                isEmulatorCompatible = isEmulatorCompatible(deviceType, cpuInfo),
-                detectedAt = System.currentTimeMillis()
+                chipset = Build.HARDWARE,
+                gpu = "Unknown",
+                ramSize = memoryInfo.totalMemoryMB / 1024,
+                storageSize = 32,
+                screenSize = 7.0f,
+                screenResolution = "${context.resources.displayMetrics.widthPixels}x${context.resources.displayMetrics.heightPixels}",
+                operatingSystem = "Android ${Build.VERSION.RELEASE}",
+                isVerified = false,
+                benchmarkScore = null,
+                registeredAt = java.time.Instant.ofEpochMilli(java.lang.System.currentTimeMillis()),
+                type = deviceType,
+                isEmulatorCompatible = isEmulatorCompatible(deviceType, cpuInfo)
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error detecting device", e)
@@ -176,17 +180,20 @@ class DeviceDetectionService @Inject constructor(
         return Device(
             id = generateDeviceId(),
             name = getDeviceName(),
-            type = DeviceType.UNKNOWN,
             manufacturer = Build.MANUFACTURER,
             model = Build.MODEL,
-            cpuArchitecture = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
-            cpuInfo = "CPU: ${Build.HARDWARE}",
-            totalMemoryMB = 0,
-            availableMemoryMB = 0,
-            androidVersion = Build.VERSION.RELEASE,
-            apiLevel = Build.VERSION.SDK_INT,
-            isEmulatorCompatible = false,
-            detectedAt = System.currentTimeMillis()
+            chipset = Build.HARDWARE,
+            gpu = "Unknown",
+            ramSize = 4,
+            storageSize = 32,
+            screenSize = 7.0f,
+            screenResolution = "${context.resources.displayMetrics.widthPixels}x${context.resources.displayMetrics.heightPixels}",
+            operatingSystem = "Android ${Build.VERSION.RELEASE}",
+            isVerified = false,
+            benchmarkScore = null,
+            registeredAt = java.time.Instant.ofEpochMilli(java.lang.System.currentTimeMillis()),
+            type = DeviceType.UNKNOWN,
+            isEmulatorCompatible = false
         )
     }
     

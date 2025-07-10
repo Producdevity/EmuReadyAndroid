@@ -18,20 +18,14 @@ val bottomNavItems = listOf(
         icon = Icons.Default.Home
     ),
     BottomNavItem(
-        name = "Browse",
-        route = Screen.Browse.route,
-        icon = Icons.Default.Search
+        name = "Games",
+        route = Screen.Games.route,
+        icon = Icons.Default.SportsEsports
     ),
     BottomNavItem(
-        name = "Create",
-        route = Screen.Create.route,
-        icon = Icons.Default.Add
-    ),
-    // TEMPORARY: Replaced Notifications with Emulator tab for testing Intent launching
-    BottomNavItem(
-        name = "Emulator",
-        route = Screen.EmulatorTest.route,
-        icon = Icons.Default.Settings
+        name = "Listings",
+        route = Screen.Listings.route,
+        icon = Icons.Default.ShoppingCart
     ),
     BottomNavItem(
         name = "Profile",

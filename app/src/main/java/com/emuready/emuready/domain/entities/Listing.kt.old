@@ -1,0 +1,241 @@
+package com.emuready.emuready.domain.entities
+
+/**
+ * Mobile Device Compatibility Listing
+ * Represents a user's compatibility report for a specific game on a handheld device
+ */
+data class Listing(
+    val id: String,
+    val gameId: String,
+    val userId: String,
+    val deviceId: String,
+    val emulatorId: String,
+    val performanceId: String,
+    val description: String,
+    val screenshotUrls: List<String>,
+    val customFieldValues: Map<String, String>, // Field ID to value
+    val approvalStatus: ApprovalStatus,
+    val isVerified: Boolean, // Verified by emulator developer
+    val score: Int, // Calculated from votes
+    val totalVotes: Int,
+    val createdAt: Long,
+    val updatedAt: Long
+) {
+    val performanceRating: PerformanceScale get() = 
+        PerformanceScale.fromId(performanceId.toIntOrNull() ?: 1)
+    
+    val isApproved: Boolean get() = approvalStatus == ApprovalStatus.APPROVED
+    
+    val hasScreenshots: Boolean get() = screenshotUrls.isNotEmpty()
+    
+    val hasCustomSettings: Boolean get() = customFieldValues.isNotEmpty()
+}
+
+/**
+ * PC Configuration Compatibility Listing
+ * Represents a user's compatibility report for a specific game on a PC setup
+ */
+data class PcListing(
+    val id: String,
+    val gameId: String,
+    val userId: String,
+    val cpuId: String,
+    val gpuId: String,
+    val emulatorId: String,
+    val memorySize: Int, // RAM in GB
+    val performanceId: String,
+    val description: String,
+    val screenshotUrls: List<String>,
+    val customFieldValues: Map<String, String>, // Field ID to value
+    val approvalStatus: ApprovalStatus,
+    val isVerified: Boolean,
+    val score: Int,
+    val totalVotes: Int,
+    val createdAt: Long,
+    val updatedAt: Long
+) {
+    val performanceRating: PerformanceScale get() = 
+        PerformanceScale.fromId(performanceId.toIntOrNull() ?: 1)
+    
+    val isApproved: Boolean get() = approvalStatus == ApprovalStatus.APPROVED
+    
+    val hasScreenshots: Boolean get() = screenshotUrls.isNotEmpty()
+    
+    val hasCustomSettings: Boolean get() = customFieldValues.isNotEmpty()
+    
+    val memoryDescription: String get() = "${memorySize}GB RAM"
+}
+
+/**
+ * Form data for creating a new compatibility listing
+ */
+data class CreateListingForm(
+    val gameId: String = "",
+    val deviceId: String = "",
+    val emulatorId: String = "",
+    val performanceRating: Int = 1, // 1-5 scale
+    val description: String = "",
+    val screenshots: List<String> = emptyList(),
+    val customSettings: Map<String, String> = emptyMap(), // Field ID to value
+    val listingType: ListingType = ListingType.MOBILE_DEVICE
+) {
+    fun isValid(): Boolean = listOf(
+        gameId.isNotEmpty(),
+        deviceId.isNotEmpty(),
+        emulatorId.isNotEmpty(),
+        performanceRating in 1..5,
+        description.isNotEmpty()
+    ).all { it }
+    
+    fun getValidationErrors(): List<String> {
+        val errors = mutableListOf<String>()
+        
+        if (gameId.isEmpty()) errors.add("Game must be selected")
+        if (deviceId.isEmpty()) errors.add("Device must be selected")
+        if (emulatorId.isEmpty()) errors.add("Emulator must be selected")
+        if (performanceRating !in 1..5) errors.add("Performance rating must be between 1-5")
+        if (description.isEmpty()) errors.add("Description cannot be empty")
+        
+        return errors
+    }
+}
+
+/**
+ * Form data for creating a PC configuration listing
+ */
+data class CreatePcListingForm(
+    val gameId: String = "",
+    val cpuId: String = "",
+    val gpuId: String = "",
+    val emulatorId: String = "",
+    val memorySize: Int = 8,
+    val performanceRating: Int = 1,
+    val description: String = "",
+    val screenshots: List<String> = emptyList(),
+    val customSettings: Map<String, String> = emptyMap()
+) {
+    fun isValid(): Boolean = listOf(
+        gameId.isNotEmpty(),
+        cpuId.isNotEmpty(),
+        gpuId.isNotEmpty(),
+        emulatorId.isNotEmpty(),
+        memorySize > 0,
+        performanceRating in 1..5,
+        description.isNotEmpty()
+    ).all { it }
+    
+    fun getValidationErrors(): List<String> {
+        val errors = mutableListOf<String>()
+        
+        if (gameId.isEmpty()) errors.add("Game must be selected")
+        if (cpuId.isEmpty()) errors.add("CPU must be selected")
+        if (gpuId.isEmpty()) errors.add("GPU must be selected")
+        if (emulatorId.isEmpty()) errors.add("Emulator must be selected")
+        if (memorySize <= 0) errors.add("Memory size must be greater than 0")
+        if (performanceRating !in 1..5) errors.add("Performance rating must be between 1-5")
+        if (description.isEmpty()) errors.add("Description cannot be empty")
+        
+        return errors
+    }
+}
+
+/**
+ * Comment on a compatibility listing
+ */
+data class Comment(
+    val id: String,
+    val listingId: String,
+    val userId: String,
+    val parentId: String?, // For nested comments
+    val content: String,
+    val score: Int, // Calculated from votes
+    val isEdited: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long
+) {
+    val hasReplies: Boolean get() = parentId == null
+}
+
+/**
+ * User vote on a listing or comment
+ */
+data class Vote(
+    val id: String,
+    val userId: String,
+    val targetId: String, // Listing or comment ID
+    val targetType: VoteTargetType,
+    val isUpvote: Boolean,
+    val createdAt: Long
+)
+
+/**
+ * Performance scales for emulation compatibility
+ */
+enum class PerformanceScale(val id: Int, val label: String, val description: String) {
+    UNPLAYABLE(1, "Unplayable", "Game does not run or has major issues"),
+    POOR(2, "Poor", "Runs with significant issues affecting gameplay"),
+    ACCEPTABLE(3, "Acceptable", "Runs with minor issues but playable"),
+    GOOD(4, "Good", "Runs well with few minor issues"),
+    PERFECT(5, "Perfect", "Runs flawlessly with no issues");
+    
+    companion object {
+        fun fromId(id: Int): PerformanceScale = 
+            values().find { it.id == id } ?: ACCEPTABLE
+        
+        fun fromLabel(label: String): PerformanceScale = 
+            values().find { it.label == label } ?: ACCEPTABLE
+    }
+}
+
+/**
+ * Approval status for listings
+ */
+enum class ApprovalStatus {
+    PENDING,
+    APPROVED,
+    REJECTED
+}
+
+/**
+ * Type of compatibility listing
+ */
+enum class ListingType {
+    MOBILE_DEVICE,
+    PC_CONFIGURATION
+}
+
+/**
+ * Vote target type
+ */
+enum class VoteTargetType {
+    LISTING,
+    COMMENT
+}
+
+/**
+ * Listing sort options
+ */
+enum class ListingSortBy {
+    NEWEST,
+    OLDEST,
+    HIGHEST_RATED,
+    LOWEST_RATED,
+    MOST_VOTED,
+    PERFORMANCE_ASC,
+    PERFORMANCE_DESC
+}
+
+/**
+ * Listing filter options
+ */
+data class ListingFilter(
+    val search: String? = null,
+    val gameId: String? = null,
+    val systemId: String? = null,
+    val deviceId: String? = null,
+    val emulatorId: String? = null,
+    val performanceIds: Set<Int> = emptySet(),
+    val approvalStatus: ApprovalStatus? = null,
+    val isVerifiedOnly: Boolean = false,
+    val sortBy: ListingSortBy = ListingSortBy.NEWEST
+)

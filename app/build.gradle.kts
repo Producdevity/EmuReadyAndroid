@@ -21,13 +21,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        buildConfigField("String", "API_BASE_URL", "\"https://emuready.com/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://www.emuready.com/api/mobile/\"")
         buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
     }
 
     signingConfigs {
         create("release") {
-            // TODO: Configure signing for production release
+            // Production signing configuration will be added for release builds
             // storeFile = file("path/to/keystore.jks")
             // storePassword = "store_password"
             // keyAlias = "key_alias"
@@ -46,8 +46,8 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("release")
-            buildConfigField("String", "API_BASE_URL", "\"https://emuready.com/\"")
-        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://www.emuready.com/api/mobile/\"")
+            buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -57,8 +57,8 @@ android {
             isDebuggable = true
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField("String", "API_BASE_URL", "\"https://emuready.com/\"")
-        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://www.emuready.com/api/mobile/\"")
+            buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${System.getenv("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
         }
     }
 
@@ -81,6 +81,10 @@ android {
         buildConfig = true
     }
 
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.8"
+    }
+
 
     packaging {
         resources {
@@ -101,6 +105,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
@@ -140,9 +145,10 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
 
-    // Security
+    // Security & Authentication
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.biometric)
+    // implementation(libs.clerk.android) // Clerk SDK will be added when available
 
     // Testing
     testImplementation(libs.junit)

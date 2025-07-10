@@ -1,147 +1,353 @@
 package com.emuready.emuready.data.repositories
 
-import com.emuready.emuready.data.local.dao.GameListingDao
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.emuready.emuready.data.mappers.toDomain
-import com.emuready.emuready.data.mappers.toEntity
-import com.emuready.emuready.data.mappers.toRequest
-import com.emuready.emuready.data.remote.api.ListingApiService
-import com.emuready.emuready.domain.entities.CreateListingForm
-import com.emuready.emuready.domain.entities.GameListing
+import com.emuready.emuready.data.paging.ListingsPagingSource
+import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
+import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
+import com.emuready.emuready.domain.entities.*
 import com.emuready.emuready.domain.exceptions.ApiException
 import com.emuready.emuready.domain.exceptions.NetworkException
 import com.emuready.emuready.domain.repositories.AuthRepository
 import com.emuready.emuready.domain.repositories.ListingRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
+
+// Temporary empty paging sources until proper implementation
+class EmptyPagingSource : PagingSource<Int, Listing>() {
+    override fun getRefreshKey(state: PagingState<Int, Listing>): Int? = null
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Listing> = LoadResult.Page(
+        data = emptyList(),
+        prevKey = null,
+        nextKey = null
+    )
+}
+
+class EmptyPcPagingSource : PagingSource<Int, PcListing>() {
+    override fun getRefreshKey(state: PagingState<Int, PcListing>): Int? = null
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, PcListing> = LoadResult.Page(
+        data = emptyList(),
+        prevKey = null,
+        nextKey = null
+    )
+}
 
 @Singleton
 class ListingRepositoryImpl @Inject constructor(
-    private val listingApiService: ListingApiService,
-    private val listingDao: GameListingDao,
+    private val trpcApiService: EmuReadyTrpcApiService,
     private val authRepository: AuthRepository
 ) : ListingRepository {
     
-    override fun getListingsByGameId(gameId: String): Flow<List<GameListing>> {
-        return listingDao.getListingsByGameId(gameId).map { entities ->
-            entities.map { it.toDomain() }
-        }
+    private val requestBuilder = TrpcRequestBuilder()
+    
+    private inline fun <reified T> createQueryParam(data: T): String {
+        return requestBuilder.buildQueryParam(Json.encodeToString(data))
     }
     
-    override fun getListingsByUserId(userId: String): Flow<List<GameListing>> {
-        return listingDao.getListingsByUserId(userId).map { entities ->
-            entities.map { it.toDomain() }
-        }
-    }
-    
-    override fun getListingsByDeviceId(deviceId: String): Flow<List<GameListing>> {
-        return listingDao.getListingsByDeviceId(deviceId).map { entities ->
-            entities.map { it.toDomain() }
-        }
-    }
-    
-    override suspend fun createListing(form: CreateListingForm): Result<GameListing> = withContext(Dispatchers.IO) {
+    override suspend fun getListingsByGameId(gameId: String): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
-            val response = listingApiService.createListing(form.toRequest())
-            if (response.isSuccessful && response.body() != null) {
-                val listing = response.body()!!.toDomain()
-                listingDao.insertListing(listing.toEntity())
-                Result.success(listing)
+            val queryParam = createQueryParam(TrpcRequestDtos.GameIdRequest(gameId))
+            val responseWrapper = trpcApiService.getListingsByGame(batch = 1, input = queryParam)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val listings = response.result.data.map { it.toDomain() }
+                Result.success(listings)
             } else {
-                Result.failure(ApiException("Failed to create listing"))
+                Result.failure(ApiException("Invalid response format"))
             }
         } catch (e: Exception) {
-            Result.failure(NetworkException("Network error", e))
+            Result.failure(NetworkException("Network error: ${e.message}", e))
         }
     }
     
-    override suspend fun updateListing(listingId: String, form: CreateListingForm): Result<GameListing> = withContext(Dispatchers.IO) {
+    override suspend fun getListingsByUserId(userId: String): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
-            val updateRequest = com.emuready.emuready.data.remote.dto.UpdateListingRequest(
-                performanceRating = form.performanceRating,
-                playabilityRating = form.playabilityRating,
-                gpuDriver = form.gpuDriver,
-                configurationPreset = form.configurationPreset,
-                customSettings = form.customSettings,
-                description = form.description,
-                screenshotUrls = form.screenshots.map { it.toString() }
+            val queryParam = createQueryParam(TrpcRequestDtos.UserIdRequest(userId))
+            val responseWrapper = trpcApiService.getUserListings(batch = 1, input = queryParam)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val listings = response.result.data.map { it.toDomain() }
+                Result.success(listings)
+            } else {
+                Result.failure(ApiException("Invalid response format"))
+            }
+        } catch (e: Exception) {
+            Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
+    
+    override suspend fun getListingById(listingId: String): Result<Listing> = withContext(Dispatchers.IO) {
+        try {
+            val queryParam = createQueryParam(TrpcRequestDtos.IdRequest(listingId))
+            val responseWrapper = trpcApiService.getListingById(batch = 1, input = queryParam)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val listing = response.result.data.toDomain()
+                Result.success(listing)
+            } else {
+                Result.failure(ApiException("Invalid response format"))
+            }
+        } catch (e: Exception) {
+            Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
+    
+    override suspend fun getFeaturedListings(): Result<List<Listing>> = withContext(Dispatchers.IO) {
+        try {
+            val queryParam = createQueryParam(TrpcRequestDtos.LimitRequest(10))
+            val responseWrapper = trpcApiService.getFeaturedListings(batch = 1, input = queryParam)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val listings = response.result.data.map { it.toDomain() }
+                Result.success(listings)
+            } else {
+                Result.failure(ApiException("Invalid response format"))
+            }
+        } catch (e: Exception) {
+            Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
+    
+    override fun getListings(
+        search: String?,
+        gameId: String?,
+        systemId: String?,
+        deviceId: String?,
+        emulatorId: String?
+    ): Flow<PagingData<Listing>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                ListingsPagingSource(
+                    trpcApiService = trpcApiService,
+                    requestBuilder = requestBuilder,
+                    gameId = gameId,
+                    deviceId = deviceId,
+                    emulatorId = emulatorId
+                )
+            }
+        ).flow
+    }
+    
+    override suspend fun createListing(form: CreateListingForm): Result<Listing> = withContext(Dispatchers.IO) {
+        try {
+            val createRequest = TrpcRequestDtos.CreateListingSchema(
+                gameId = form.gameId,
+                deviceId = form.deviceId ?: "",
+                emulatorId = form.emulatorId,
+                performanceId = form.performanceRating,
+                notes = form.description,
+                customFieldValues = form.customSettings.map { (fieldId, value) ->
+                    TrpcRequestDtos.CustomFieldValueInput(
+                        customFieldDefinitionId = fieldId,
+                        value = value
+                    )
+                }
             )
             
-            val response = listingApiService.updateListing(listingId, updateRequest)
-            if (response.isSuccessful && response.body() != null) {
-                val listing = response.body()!!.toDomain()
-                listingDao.updateListing(listing.toEntity())
+            val request = requestBuilder.buildRequest(createRequest)
+            val responseWrapper = trpcApiService.createListing(request)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val listing = response.result.data.toDomain()
                 Result.success(listing)
             } else {
-                Result.failure(ApiException("Failed to update listing"))
+                Result.failure(ApiException("Invalid response format"))
             }
         } catch (e: Exception) {
-            Result.failure(NetworkException("Network error", e))
+            Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
+    
+    override suspend fun updateListing(listingId: String, form: CreateListingForm): Result<Listing> = withContext(Dispatchers.IO) {
+        try {
+            val updateRequest = TrpcRequestDtos.UpdateListingSchema(
+                id = listingId,
+                performanceId = form.performanceRating,
+                notes = form.description,
+                customFieldValues = form.customSettings.map { (fieldId, value) ->
+                    TrpcRequestDtos.CustomFieldValueInput(
+                        customFieldDefinitionId = fieldId,
+                        value = value
+                    )
+                }
+            )
+            
+            val request = requestBuilder.buildRequest(updateRequest)
+            val responseWrapper = trpcApiService.updateListing(request)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val listing = response.result.data.toDomain()
+                Result.success(listing)
+            } else {
+                Result.failure(ApiException("Invalid response format"))
+            }
+        } catch (e: Exception) {
+            Result.failure(NetworkException("Network error: ${e.message}", e))
         }
     }
     
     override suspend fun deleteListing(listingId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val response = listingApiService.deleteListing(listingId)
-            if (response.isSuccessful) {
-                listingDao.deleteListingById(listingId)
-                Result.success(Unit)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.IdRequest(listingId))
+            val responseWrapper = trpcApiService.deleteListing(request)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
             } else {
-                Result.failure(ApiException("Failed to delete listing"))
+                Result.success(Unit)
             }
         } catch (e: Exception) {
-            Result.failure(NetworkException("Network error", e))
+            Result.failure(NetworkException("Network error: ${e.message}", e))
         }
     }
     
-    override suspend fun likeListing(listingId: String): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun voteListing(listingId: String, isUpvote: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val response = listingApiService.likeListing(listingId)
-            if (response.isSuccessful) {
-                Result.success(Unit)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.VoteRequest(listingId, isUpvote))
+            val responseWrapper = trpcApiService.voteListing(request)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
             } else {
-                Result.failure(ApiException("Failed to like listing"))
+                Result.success(Unit)
             }
         } catch (e: Exception) {
-            Result.failure(NetworkException("Network error", e))
+            Result.failure(NetworkException("Network error: ${e.message}", e))
         }
     }
     
-    override suspend fun unlikeListing(listingId: String): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun getUserVote(listingId: String): Result<Boolean?> = withContext(Dispatchers.IO) {
         try {
-            val response = listingApiService.unlikeListing(listingId)
-            if (response.isSuccessful) {
-                Result.success(Unit)
+            val queryParam = createQueryParam(TrpcRequestDtos.ListingIdRequest(listingId))
+            val responseWrapper = trpcApiService.getUserVote(queryParam)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val vote = response.result.data.vote
+                Result.success(vote)
             } else {
-                Result.failure(ApiException("Failed to unlike listing"))
+                Result.failure(ApiException("Invalid response format"))
             }
         } catch (e: Exception) {
-            Result.failure(NetworkException("Network error", e))
+            Result.failure(NetworkException("Network error: ${e.message}", e))
         }
     }
     
-    override suspend fun syncUserListings(): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun getListingComments(listingId: String): Result<List<Comment>> = withContext(Dispatchers.IO) {
         try {
-            // Get current user ID from authentication repository
-            val userResult = authRepository.getCurrentUser()
-            if (userResult.isFailure || userResult.getOrNull() == null) {
-                return@withContext Result.failure(Exception("User not authenticated"))
-            }
-            val currentUser = userResult.getOrNull()!!
-            val userId = currentUser.id
-            val response = listingApiService.getUserListings(userId)
-            if (response.isSuccessful && response.body() != null) {
-                val listings = response.body()!!.map { it.toDomain() }
-                listingDao.insertListings(listings.map { it.toEntity() })
-                Result.success(Unit)
+            val queryParam = createQueryParam(TrpcRequestDtos.ListingIdRequest(listingId))
+            val responseWrapper = trpcApiService.getListingComments(queryParam)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val comments = response.result.data.comments.map { it.toDomain() }
+                Result.success(comments)
             } else {
-                Result.failure(ApiException("Failed to sync listings"))
+                Result.failure(ApiException("Invalid response format"))
             }
         } catch (e: Exception) {
-            Result.failure(NetworkException("Network error", e))
+            Result.failure(NetworkException("Network error: ${e.message}", e))
         }
+    }
+    
+    override suspend fun createComment(listingId: String, content: String): Result<Comment> = withContext(Dispatchers.IO) {
+        try {
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.CreateCommentRequest(listingId, content))
+            val responseWrapper = trpcApiService.createComment(request)
+            val response = responseWrapper.`0`
+            
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val comment = response.result.data.toDomain()
+                Result.success(comment)
+            } else {
+                Result.failure(ApiException("Invalid response format"))
+            }
+        } catch (e: Exception) {
+            Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
+
+    override fun getMobileListingsForGame(gameId: String): Flow<PagingData<Listing>> {
+        // TODO: Fix MobileListingsPagingSource reference
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                // MobileListingsPagingSource(
+                //     trpcApiService = trpcApiService,
+                //     requestBuilder = requestBuilder,
+                //     gameId = gameId
+                // )
+                // Temporary empty paging source
+                EmptyPagingSource()
+            }
+        ).flow
+    }
+
+    override fun getPcListingsForGame(gameId: String): Flow<PagingData<PcListing>> {
+        // TODO: Fix PcListingsPagingSource reference
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                // PcListingsPagingSource(
+                //     trpcApiService = trpcApiService,
+                //     requestBuilder = requestBuilder,
+                //     gameId = gameId
+                // )
+                // Temporary empty paging source
+                EmptyPcPagingSource()
+            }
+        ).flow
+    }
+    
+    override suspend fun createPcListing(form: CreateListingForm): Result<PcListing> {
+        // TODO: Implement PC listing creation
+        return Result.failure(NotImplementedError("PC listing creation not implemented yet"))
     }
 }

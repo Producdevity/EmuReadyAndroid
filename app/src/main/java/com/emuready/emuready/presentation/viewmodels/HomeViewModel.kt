@@ -54,12 +54,14 @@ class HomeViewModel @Inject constructor(
             // Try to load featured games from API
             getFeaturedGamesUseCase().fold(
                 onSuccess = { featuredGames ->
+                    android.util.Log.d("HomeViewModel", "Successfully loaded ${featuredGames.size} featured games")
                     _uiState.value = _uiState.value.copy(
                         featuredGames = featuredGames,
                         isLoading = false
                     )
                 },
                 onFailure = { error ->
+                    android.util.Log.e("HomeViewModel", "Failed to load featured games: ${error.message}", error)
                     _uiState.value = _uiState.value.copy(
                         error = error.message,
                         isLoading = false

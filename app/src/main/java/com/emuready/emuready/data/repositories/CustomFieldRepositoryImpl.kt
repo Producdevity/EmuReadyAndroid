@@ -2,8 +2,8 @@ package com.emuready.emuready.data.repositories
 
 import com.emuready.emuready.data.mappers.*
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.EmulatorIdRequest
 import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.domain.entities.CustomFieldDefinition
 import com.emuready.emuready.domain.exceptions.ApiException
 import com.emuready.emuready.domain.exceptions.NetworkException
@@ -22,13 +22,14 @@ class CustomFieldRepositoryImpl @Inject constructor(
     
     override suspend fun getCustomFieldsByEmulator(emulatorId: String): Result<List<CustomFieldDefinition>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(EmulatorIdRequest(emulatorId))
-            val response = trpcApiService.getCustomFieldsByEmulator(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.EmulatorIdRequest(emulatorId))
+            val responseWrapper = trpcApiService.getCustomFieldsByEmulator(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val customFields = response.result.data.json.map { it.toDomain() }
+            } else if (response.result?.data != null) {
+                val customFields = response.result.data.map { it.toDomain() }
                 Result.success(customFields)
             } else {
                 Result.failure(ApiException("Invalid response format"))

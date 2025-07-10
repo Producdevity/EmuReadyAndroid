@@ -1,6 +1,6 @@
 package com.emuready.emuready.data.remote.api
 
-import com.emuready.emuready.data.remote.dto.MobileUser
+import com.emuready.emuready.data.remote.dto.TrpcResponseDtos.MobileUser
 import retrofit2.Response
 import retrofit2.http.*
 

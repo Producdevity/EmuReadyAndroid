@@ -30,8 +30,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.emuready.emuready.domain.entities.Listing
+import com.emuready.emuready.domain.entities.PerformanceLevel
 import com.emuready.emuready.presentation.ui.theme.*
-import com.emuready.emuready.presentation.viewmodels.HomeViewModel
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import com.emuready.emuready.presentation.viewmodels.ListingsViewModel
 import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.util.*
@@ -42,12 +47,15 @@ fun ListingsScreen(
     onNavigateToListing: (String) -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToCreate: () -> Unit = {},
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: ListingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("All") }
-    var sortBy by remember { mutableStateOf("Recent") }
+    val listings = viewModel.listings.collectAsLazyPagingItems()
+    
+    // Use ViewModel state instead of local state
+    var searchQuery by remember { mutableStateOf(uiState.searchQuery) }
+    var selectedFilter by remember { mutableStateOf(uiState.selectedCategory) }
+    var sortBy by remember { mutableStateOf(uiState.sortOption) }
     var isVisible by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
@@ -76,7 +84,10 @@ fun ListingsScreen(
         ) {
             ListingsHeader(
                 searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it },
+                onSearchQueryChange = { 
+                    searchQuery = it
+                    viewModel.updateSearchQuery(it)
+                },
                 onNavigateBack = onNavigateBack,
                 onNavigateToCreate = onNavigateToCreate
             )
@@ -94,9 +105,15 @@ fun ListingsScreen(
         ) {
             FilterSortRow(
                 selectedFilter = selectedFilter,
-                onFilterSelected = { selectedFilter = it },
+                onFilterSelected = { 
+                    selectedFilter = it
+                    viewModel.updateSelectedCategory(it)
+                },
                 sortBy = sortBy,
-                onSortByChanged = { sortBy = it }
+                onSortByChanged = { 
+                    sortBy = it
+                    viewModel.updateSortOption(it)
+                }
             )
         }
         
@@ -111,7 +128,7 @@ fun ListingsScreen(
             )
         ) {
             ListingsList(
-                listings = emptyList(), // Replace with actual listings from uiState
+                listings = listings,
                 onListingClick = onNavigateToListing,
                 onNavigateToCreate = onNavigateToCreate
             )
@@ -365,11 +382,11 @@ private fun FilterChip(
 
 @Composable
 private fun ListingsList(
-    listings: List<Listing>,
+    listings: LazyPagingItems<Listing>,
     onListingClick: (String) -> Unit,
     onNavigateToCreate: () -> Unit
 ) {
-    if (listings.isNotEmpty()) {
+    if (listings.itemCount > 0) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -377,24 +394,27 @@ private fun ListingsList(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            itemsIndexed(listings) { index, listing ->
-                var isVisible by remember { mutableStateOf(false) }
-                
-                LaunchedEffect(Unit) {
-                    delay(index * StaggerAnimations.ItemDelay)
-                    isVisible = true
-                }
-                
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + slideInHorizontally(
-                        initialOffsetX = { it / 2 }
-                    )
-                ) {
-                    ListingCard(
-                        listing = listing,
-                        onClick = { onListingClick(listing.id) }
-                    )
+            items(listings.itemCount) { index ->
+                val listing = listings[index]
+                if (listing != null) {
+                    var isVisible by remember { mutableStateOf(false) }
+                    
+                    LaunchedEffect(Unit) {
+                        delay(index * StaggerAnimations.ItemDelay)
+                        isVisible = true
+                    }
+                    
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + slideInHorizontally(
+                            initialOffsetX = { it / 2 }
+                        )
+                    ) {
+                        ListingCard(
+                            listing = listing,
+                            onClick = { onListingClick(listing.id) }
+                        )
+                    }
                 }
             }
         }
@@ -455,15 +475,33 @@ private fun ListingCard(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Image
-            AsyncImage(
-                model = listing.imageUrl,
-                contentDescription = listing.title,
+            // Performance Badge
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = when (listing.performanceLevel) {
+                    PerformanceLevel.PERFECT -> SuccessGreen
+                    PerformanceLevel.GREAT -> SecondaryTeal
+                    PerformanceLevel.GOOD -> SecondaryTeal  
+                    PerformanceLevel.PLAYABLE -> AccentOrange
+                    PerformanceLevel.POOR -> NeutralGray300
+                    PerformanceLevel.UNPLAYABLE -> Color.Red
+                },
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = listing.performanceLevel.displayName,
+                        style = CustomTextStyles.Caption,
+                        color = Color.White,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
             
             // Content
             Column(
@@ -474,7 +512,7 @@ private fun ListingCard(
             ) {
                 Column {
                     Text(
-                        text = listing.title,
+                        text = "Game ID: ${listing.gameId}",
                         style = CustomTextStyles.GameTitle,
                         color = OnSurface,
                         maxLines = 2,
@@ -484,45 +522,35 @@ private fun ListingCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     Text(
-                        text = listing.seller,
+                        text = "Device: ${listing.deviceId}",
                         style = CustomTextStyles.GameSubtitle,
                         color = OnSurfaceVariant
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    // Condition badge
+                    // Verification badge  
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = when (listing.condition) {
-                            "New" -> SuccessGreen.copy(alpha = 0.1f)
-                            "Like New" -> SecondaryTeal.copy(alpha = 0.1f)
-                            "Good" -> AccentOrange.copy(alpha = 0.1f)
-                            else -> NeutralGray300.copy(alpha = 0.1f)
-                        }
+                        color = if (listing.isVerified) SuccessGreen.copy(alpha = 0.1f) else AccentOrange.copy(alpha = 0.1f)
                     ) {
                         Text(
-                            text = listing.condition,
+                            text = if (listing.isVerified) "Verified" else "Community",
                             style = CustomTextStyles.Caption,
-                            color = when (listing.condition) {
-                                "New" -> SuccessGreen
-                                "Like New" -> SecondaryTeal
-                                "Good" -> AccentOrange
-                                else -> NeutralGray600
-                            },
+                            color = if (listing.isVerified) SuccessGreen else AccentOrange,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
                 }
                 
-                // Price and actions
+                // Score and votes
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = NumberFormat.getCurrencyInstance(Locale.US).format(listing.price),
+                        text = "Rating: ${String.format("%.1f", listing.overallRating)}",
                         style = CustomTextStyles.CardAccent,
                         color = Secondary
                     )
@@ -532,13 +560,13 @@ private fun ListingCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = "Location",
+                            Icons.Default.ThumbUp,
+                            contentDescription = "Votes",
                             tint = OnSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = listing.location,
+                            text = "${listing.likeCount + listing.dislikeCount} votes",
                             style = CustomTextStyles.Caption,
                             color = OnSurfaceVariant
                         )
@@ -546,14 +574,13 @@ private fun ListingCard(
                 }
             }
             
-            // Favorite button
-            IconButton(
-                onClick = { /* Toggle favorite */ }
-            ) {
+            // Verified badge
+            if (listing.isVerified) {
                 Icon(
-                    if (listing.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Favorite",
-                    tint = if (listing.isFavorite) AccentPink else OnSurfaceVariant
+                    Icons.Default.Verified,
+                    contentDescription = "Verified",
+                    tint = SuccessGreen,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

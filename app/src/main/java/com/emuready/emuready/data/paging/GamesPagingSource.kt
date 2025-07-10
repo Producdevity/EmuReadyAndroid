@@ -5,10 +5,12 @@ import androidx.paging.PagingState
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
 import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
-import com.emuready.emuready.data.remote.dto.GetListingsSchema
-import com.emuready.emuready.data.remote.dto.MobileListing
+import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
+import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.presentation.viewmodels.SortOption
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class GamesPagingSource(
     private val trpcApiService: EmuReadyTrpcApiService,
@@ -21,55 +23,39 @@ class GamesPagingSource(
     private val performanceIds: Set<String> = emptySet()
 ) : PagingSource<Int, Game>() {
 
+    private inline fun <reified T> createQueryParam(data: T): String {
+        return requestBuilder.buildQueryParam(Json.encodeToString(data))
+    }
+
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Game> {
         return try {
-            val currentKey = params.key ?: 1
+            val offset = params.key ?: 0
             val pageSize = params.loadSize
             
-            // Build the request parameters according to GetListingsSchema
-            val requestData = GetListingsSchema(
+            // Build the request parameters for games.get endpoint
+            val requestData = TrpcRequestDtos.GetGamesSchema(
+                offset = offset,
                 limit = pageSize,
-                page = currentKey,
                 search = search,
-                systemId = systemIds.firstOrNull(), // GetListingsSchema only supports single systemId
-                deviceId = deviceIds.firstOrNull(), // GetListingsSchema only supports single deviceId
-                emulatorId = emulatorIds.firstOrNull() // GetListingsSchema only supports single emulatorId
+                systemId = systemIds.firstOrNull(),
+                hideGamesWithNoListings = false
             )
             
-            // Encode the request as a query parameter
-            val inputParam = requestBuilder.buildQueryParam(requestData)
-            val responseList = trpcApiService.getListings(input = inputParam)
-            val response = responseList.firstOrNull()
+            // Make tRPC request
+            val queryParam = createQueryParam(requestData)
+            val responseWrapper = trpcApiService.getGames(batch = 1, input = queryParam)
+            val response = responseWrapper.`0`
             
-            if (response?.error != null) {
+            if (response.error != null) {
                 LoadResult.Error(Exception(response.error.message))
-            } else if (response?.result?.data?.json != null) {
-                val listings = response.result.data.json
-                
-                // Extract unique games from listings and calculate their compatibility
-                val gameMap = mutableMapOf<String, MutableList<MobileListing>>()
-                listings.forEach { listing ->
-                    val gameId = listing.game.id
-                    gameMap.getOrPut(gameId) { mutableListOf() }.add(listing)
-                }
-                
-                val games = gameMap.map { (gameId, gameListings) ->
-                    val firstListing = gameListings.first()
-                    val game = firstListing.game.toDomain()
-                    
-                    // Calculate average compatibility from all listings for this game
-                    val avgCompatibility = gameListings.map { it.performance.rank }.average().toFloat() / 5.0f
-                    
-                    game.copy(
-                        averageCompatibility = avgCompatibility.coerceIn(0.0f, 1.0f),
-                        totalListings = gameListings.size
-                    )
-                }
+            } else if (response.result?.data?.json != null) {
+                // Games endpoint returns games directly
+                val games = response.result.data.json.map { it.toDomain() }
                 
                 LoadResult.Page(
                     data = games,
-                    prevKey = if (currentKey == 1) null else currentKey - 1,
-                    nextKey = if (games.isEmpty()) null else currentKey + 1
+                    prevKey = if (offset == 0) null else offset - pageSize,
+                    nextKey = if (games.size < pageSize) null else offset + pageSize
                 )
             } else {
                 LoadResult.Error(Exception("No data received"))

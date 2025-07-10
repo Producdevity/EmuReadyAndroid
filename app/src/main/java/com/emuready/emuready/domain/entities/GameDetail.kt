@@ -1,30 +1,45 @@
 package com.emuready.emuready.domain.entities
 
-import java.time.Instant
-import java.time.LocalDate
-
+/**
+ * Extended game information with additional details for the game detail screen
+ * Contains all game information plus related listings, screenshots, and metadata
+ */
 data class GameDetail(
-    val id: String,
-    val title: String,
-    val titleId: String,
-    val coverImageUrl: String,
-    val screenshotUrls: List<String>,
-    val description: String,
-    val releaseDate: LocalDate,
-    val developer: String,
-    val publisher: String,
+    val game: Game,
+    val description: String?,
+    val screenshots: List<String>,
+    val developer: String?,
+    val publisher: String?,
+    val releaseDate: String?,
     val genres: List<String>,
-    val compatibilityRatings: Map<String, CompatibilityRating>,
-    val listings: List<GameListing>,
+    val recentListings: List<Listing>,
+    val topRatedListings: List<Listing>,
+    val compatibleDevices: List<Device>,
+    val recommendedEmulators: List<Emulator>,
     val averageRating: Float,
-    val totalRatings: Int,
-    val lastUpdated: Instant
-)
-
-data class CompatibilityRating(
-    val deviceId: String,
-    val deviceName: String,
-    val performanceRating: Float,
-    val playabilityRating: Float,
-    val totalReports: Int
-)
+    val ratingDistribution: Map<Int, Int>, // star rating to count
+    val tags: List<String>,
+    val isVerified: Boolean,
+    val lastUpdated: Long
+) {
+    companion object {
+        fun fromGame(game: Game) = GameDetail(
+            game = game,
+            description = null,
+            screenshots = emptyList(),
+            developer = null,
+            publisher = null,
+            releaseDate = null,
+            genres = emptyList(),
+            recentListings = emptyList(),
+            topRatedListings = emptyList(),
+            compatibleDevices = emptyList(),
+            recommendedEmulators = emptyList(),
+            averageRating = game.averageCompatibility * 5f, // Convert to 5-star scale
+            ratingDistribution = emptyMap(),
+            tags = emptyList(),
+            isVerified = false,
+            lastUpdated = game.lastUpdated
+        )
+    }
+}

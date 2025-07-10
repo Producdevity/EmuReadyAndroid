@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.emuready.emuready.domain.entities.Game
-import com.emuready.emuready.domain.usecases.GetGamesUseCase
+import com.emuready.emuready.domain.usecases.GetFilteredGamesUseCase
 import com.emuready.emuready.domain.usecases.GetFiltersUseCase
 import com.emuready.emuready.presentation.ui.screens.FilterOption
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class BrowseViewModel @Inject constructor(
-    private val getGamesUseCase: GetGamesUseCase,
+    private val getFilteredGamesUseCase: GetFilteredGamesUseCase,
     private val getFiltersUseCase: GetFiltersUseCase
 ) : ViewModel() {
 
@@ -36,7 +36,7 @@ class BrowseViewModel @Inject constructor(
     ) { query, sort, filters ->
         GameQuery(query, sort, filters)
     }.flatMapLatest { query ->
-        getGamesUseCase(
+        getFilteredGamesUseCase(
             search = query.searchQuery.takeIf { it.isNotBlank() },
             sortBy = query.sortOption,
             systemIds = query.filters[FilterType.SYSTEM] ?: emptySet(),

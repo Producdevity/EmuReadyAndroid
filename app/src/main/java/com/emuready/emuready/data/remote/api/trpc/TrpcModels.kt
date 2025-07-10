@@ -1,9 +1,11 @@
 package com.emuready.emuready.data.remote.api.trpc
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
- * tRPC Request wrapper as specified in the API documentation
+ * tRPC Request wrapper exactly as specified in the API documentation
+ * Format: { "0": { "json": T } }
  */
 @Serializable
 data class TrpcRequest<T>(
@@ -16,22 +18,23 @@ data class TrpcRequestBody<T>(
 )
 
 /**
- * tRPC Response wrapper - matches actual API response
+ * tRPC Response wrapper exactly as specified in the API documentation
+ * Format: { "0": { "result": { "data": T } } } or { "0": { "error": TrpcError } }
  */
 @Serializable
-data class TrpcResponse<T>(
-    val result: TrpcData<T>? = null,
+data class TrpcResponseWrapper<T>(
+    val `0`: TrpcResult<T>
+)
+
+@Serializable
+data class TrpcResult<T>(
+    val result: TrpcResultData<T>? = null,
     val error: TrpcError? = null
 )
 
 @Serializable
-data class TrpcData<T>(
-    val data: TrpcJsonWrapper<T>
-)
-
-@Serializable
-data class TrpcJsonWrapper<T>(
-    val json: T
+data class TrpcResultData<T>(
+    val data: T
 )
 
 @Serializable
@@ -52,32 +55,52 @@ data class TrpcErrorData(
  * tRPC Request Builder utility class
  */
 class TrpcRequestBuilder {
-    val json = kotlinx.serialization.json.Json {
+    
+    private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
+        isLenient = true
+        allowStructuredMapKeys = true
     }
     
-    fun <T> buildQuery(input: T): TrpcRequest<T> {
+    fun <T> buildRequest(input: T): TrpcRequest<T> {
         return TrpcRequest(
             `0` = TrpcRequestBody(json = input)
         )
     }
     
-    fun buildEmptyQuery(): TrpcRequest<Unit> {
+    fun buildEmptyRequest(): TrpcRequest<Unit> {
         return TrpcRequest(
             `0` = TrpcRequestBody(json = Unit)
         )
     }
     
     /**
-     * Build query parameter string for GET requests
+     * Build query parameter string for GET requests (batch format)
      */
-    inline fun <reified T> buildQueryParam(input: T): String {
-        val request = TrpcRequest(`0` = TrpcRequestBody(json = input))
-        return json.encodeToString(TrpcRequest.serializer(kotlinx.serialization.serializer<T>()), request)
+    fun buildQueryParam(input: String): String {
+        return """{"0":{"json":$input}}"""
     }
     
     fun buildEmptyQueryParam(): String {
-        return buildQueryParam(Unit)
+        return """{"0":{"json":null}}"""
     }
 }
+
+/**
+ * Result wrapper for API responses
+ */
+sealed class ApiResult<T> {
+    data class Success<T>(val data: T) : ApiResult<T>()
+    data class Error<T>(val exception: Exception, val code: String? = null) : ApiResult<T>()
+}
+
+/**
+ * tRPC Exception for API errors
+ */
+class TrpcException(
+    message: String,
+    val code: String? = null,
+    val httpStatus: Int? = null,
+    cause: Throwable? = null
+) : Exception(message, cause)

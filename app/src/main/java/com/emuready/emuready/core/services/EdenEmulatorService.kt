@@ -22,7 +22,7 @@ class EdenEmulatorService @Inject constructor(
         private const val EDEN_LAUNCH_ACTION = "dev.eden.eden_emulator.LAUNCH_WITH_CUSTOM_CONFIG"
         private const val EMULATION_ACTIVITY = "org.yuzu.yuzu_emu.activities.EmulationActivity"
     }
-    
+
     suspend fun isEdenInstalled(): Boolean = withContext(Dispatchers.IO) {
         try {
             context.packageManager.getPackageInfo(EDEN_PACKAGE, 0)
@@ -31,7 +31,7 @@ class EdenEmulatorService @Inject constructor(
             false
         }
     }
-    
+
     suspend fun launchGame(
         titleId: String,
         configuration: EmulatorConfiguration
@@ -42,7 +42,7 @@ class EdenEmulatorService @Inject constructor(
                     EmulatorException("Eden emulator is not installed")
                 )
             }
-            
+
             val intent = Intent().apply {
                 action = EDEN_LAUNCH_ACTION
                 setPackage(EDEN_PACKAGE)
@@ -51,7 +51,7 @@ class EdenEmulatorService @Inject constructor(
                 putExtra("custom_settings", configuration.toINIFormat())
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            
+
             // Verify intent can be resolved
             val resolveInfo = context.packageManager.resolveActivity(intent, 0)
             if (resolveInfo == null) {
@@ -59,15 +59,15 @@ class EdenEmulatorService @Inject constructor(
                     EmulatorException("Eden emulator does not support custom configuration")
                 )
             }
-            
+
             context.startActivity(intent)
             Result.success(Unit)
-            
+
         } catch (e: Exception) {
             Result.failure(EmulatorException("Failed to launch Eden emulator", e))
         }
     }
-    
+
     suspend fun launchGameWithPreset(
         titleId: String,
         presetName: String
@@ -81,10 +81,10 @@ class EdenEmulatorService @Inject constructor(
                 EmulatorException("Unknown preset: $presetName")
             )
         }
-        
+
         return launchGame(titleId, configuration)
     }
-    
+
     suspend fun getAvailablePresets(): List<String> {
         return listOf(
             "Known Working Config",

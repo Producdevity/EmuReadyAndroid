@@ -1,24 +1,24 @@
 package com.emuready.emuready.data.mappers
 
-import com.emuready.emuready.data.remote.dto.*
+import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
 import com.emuready.emuready.domain.entities.*
 
 // Trust System Mappers
 
-fun MobileTrustLevel.toDomain(): TrustLevel {
+fun TrpcResponseDtos.MobileTrustLevel.toDomain(): TrustLevel {
     return TrustLevel(
         id = this.id,
         name = this.name,
-        minScore = this.minScore,
-        maxScore = this.maxScore,
+        minScore = this.minScore.toInt(),
+        maxScore = this.maxScore.toInt(),
         color = this.color,
         description = this.description
     )
 }
 
-fun TrustInfo.toDomain(): UserTrustInfo {
+fun TrpcResponseDtos.TrustInfo.toDomain(): UserTrustInfo {
     return UserTrustInfo(
-        trustScore = this.trustScore,
+        trustScore = this.trustScore.toInt(),
         trustLevel = this.trustLevel.toDomain(),
         userName = this.userName
     )
@@ -26,47 +26,32 @@ fun TrustInfo.toDomain(): UserTrustInfo {
 
 // Developer Verification Mappers
 
-fun MobileVerification.toDomain(): Verification {
+fun TrpcResponseDtos.MobileVerification.toDomain(): Verification {
     return Verification(
         id = this.id,
-        verifierId = this.verifierId,
+        verifierId = this.userId, // Using userId as verifierId 
         listingId = this.listingId,
-        verifiedAt = this.verifiedAt,
+        verifiedAt = this.createdAt, // Using createdAt as verifiedAt
         notes = this.notes,
-        emulator = this.emulator.toDomain(),
-        verifier = this.verifier.toDomain()
+        emulator = Emulator(
+            id = "",
+            name = "Unknown",
+            logoUrl = null,
+            supportedSystems = emptyList(),
+            customFields = emptyList()
+        ),
+        verifier = User(
+            id = "",
+            username = "Unknown",
+            email = "",
+            avatarUrl = null,
+            totalListings = 0,
+            totalLikes = 0,
+            memberSince = 0L,
+            isVerified = false,
+            lastActive = 0L
+        )
     )
 }
 
-// Helper mappers for nested entities
-
-fun MobileEmulator.toDomain(): Emulator {
-    return Emulator(
-        id = this.id,
-        name = this.name,
-        logoUrl = this.logo,
-        supportedSystems = this.systems?.map { it.toGameSystem() } ?: emptyList()
-    )
-}
-
-fun MobileAuthor.toDomain(): User {
-    return User(
-        id = this.id,
-        username = this.name ?: "Anonymous",
-        email = "", // Not provided in MobileAuthor
-        avatarUrl = null,
-        totalListings = 0, // Not provided
-        totalLikes = 0, // Not provided  
-        memberSince = java.lang.System.currentTimeMillis(), // Not provided
-        isVerified = false, // Not provided
-        lastActive = java.lang.System.currentTimeMillis() // Not provided
-    )
-}
-
-fun MobileSystem.toGameSystem(): GameSystem {
-    return GameSystem(
-        id = this.id,
-        name = this.name,
-        key = this.key ?: this.name.lowercase().replace(" ", "_")
-    )
-}
+// Note: MobileEmulator, MobileAuthor, and MobileSystem mappers are already defined in GameMappers.kt

@@ -7,14 +7,14 @@ import androidx.room.PrimaryKey
 data class GameEntity(
     @PrimaryKey val id: String,
     val title: String,
-    val titleId: String,
-    val coverImageUrl: String,
-    val developer: String,
-    val publisher: String,
-    val releaseDate: String,
-    val genres: String, // JSON string
+    val coverImageUrl: String?,
+    val boxartUrl: String?,
+    val bannerUrl: String?,
+    val systemId: String,
+    val systemName: String,
     val averageCompatibility: Float,
-    val totalListings: Int,
+    val totalMobileListings: Int,
+    val totalPcListings: Int,
     val lastUpdated: Long,
     val isFavorite: Boolean = false
 )

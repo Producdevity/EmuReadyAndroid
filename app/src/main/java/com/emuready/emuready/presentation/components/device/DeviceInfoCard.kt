@@ -43,9 +43,11 @@ fun DeviceInfoCard(device: Device) {
         
         DeviceInfoRow("Manufacturer", device.manufacturer)
         DeviceInfoRow("Model", device.model)
-        DeviceInfoRow("Android Version", "${device.androidVersion} (API ${device.apiLevel})")
-        DeviceInfoRow("CPU Architecture", device.cpuArchitecture)
-        DeviceInfoRow("Memory", "${device.totalMemoryMB} MB total, ${device.availableMemoryMB} MB available")
+        DeviceInfoRow("Operating System", device.operatingSystem)
+        DeviceInfoRow("Chipset", device.chipset)
+        DeviceInfoRow("GPU", device.gpu)
+        DeviceInfoRow("Memory", device.memoryDescription)
+        DeviceInfoRow("Screen", device.resolutionDescription)
         DeviceInfoRow("Emulator Compatible", if (device.isEmulatorCompatible) "Yes" else "No")
     }
 }

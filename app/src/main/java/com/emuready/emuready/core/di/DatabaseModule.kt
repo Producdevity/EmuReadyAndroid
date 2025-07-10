@@ -33,11 +33,6 @@ object DatabaseModule {
     }
     
     @Provides
-    fun provideListingDao(database: EmuReadyDatabase): GameListingDao {
-        return database.listingDao()
-    }
-    
-    @Provides
     fun provideUserDao(database: EmuReadyDatabase): UserDao {
         return database.userDao()
     }

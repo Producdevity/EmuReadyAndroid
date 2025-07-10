@@ -1,9 +1,9 @@
 package com.emuready.emuready.data.repositories
 
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.UserIdRequest
+import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
-import com.emuready.emuready.data.remote.dto.CreateListingReportSchema
+// import com.emuready.emuready.data.remote.dto.CreateListingReportSchema // TODO: Add missing schema
 import com.emuready.emuready.domain.entities.ReportReason
 import com.emuready.emuready.domain.exceptions.ApiException
 import com.emuready.emuready.domain.exceptions.NetworkException
@@ -27,25 +27,24 @@ class ReportRepositoryImpl @Inject constructor(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val reportReason = when (reason) {
-                ReportReason.INAPPROPRIATE_CONTENT -> com.emuready.emuready.data.remote.dto.ReportReason.INAPPROPRIATE_CONTENT
-                ReportReason.SPAM -> com.emuready.emuready.data.remote.dto.ReportReason.SPAM
-                ReportReason.MISLEADING_INFORMATION -> com.emuready.emuready.data.remote.dto.ReportReason.MISLEADING_INFORMATION
-                ReportReason.FAKE_LISTING -> com.emuready.emuready.data.remote.dto.ReportReason.FAKE_LISTING
-                ReportReason.COPYRIGHT_VIOLATION -> com.emuready.emuready.data.remote.dto.ReportReason.COPYRIGHT_VIOLATION
-                ReportReason.OTHER -> com.emuready.emuready.data.remote.dto.ReportReason.OTHER
+                ReportReason.INAPPROPRIATE_CONTENT -> TrpcRequestDtos.ReportReason.INAPPROPRIATE_CONTENT
+                ReportReason.SPAM -> TrpcRequestDtos.ReportReason.SPAM
+                ReportReason.MISLEADING_INFORMATION -> TrpcRequestDtos.ReportReason.MISLEADING_INFORMATION
+                ReportReason.FAKE_LISTING -> TrpcRequestDtos.ReportReason.FAKE_LISTING
+                ReportReason.COPYRIGHT_VIOLATION -> TrpcRequestDtos.ReportReason.COPYRIGHT_VIOLATION
+                ReportReason.OTHER -> TrpcRequestDtos.ReportReason.OTHER
             }
             
-            val request = requestBuilder.buildQuery(
-                CreateListingReportSchema(listingId, reportReason, description)
+            val request = requestBuilder.buildRequest(
+                TrpcRequestDtos.CreateListingReportSchema(listingId, reportReason, description)
             )
-            val response = trpcApiService.createListingReport(request)
+            val responseWrapper = trpcApiService.createListingReport(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                Result.success(Unit)
             } else {
-                Result.failure(ApiException("Invalid response format"))
+                Result.success(Unit)
             }
         } catch (e: Exception) {
             Result.failure(NetworkException("Network error: ${e.message}", e))
@@ -54,13 +53,14 @@ class ReportRepositoryImpl @Inject constructor(
     
     override suspend fun checkUserHasReports(userId: String): Result<Pair<Boolean, Int>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(UserIdRequest(userId))
-            val response = trpcApiService.checkUserHasReports(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.UserIdRequest(userId))
+            val responseWrapper = trpcApiService.checkUserHasReports(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val userReports = response.result.data.json
+            } else if (response.result?.data != null) {
+                val userReports = response.result.data
                 Result.success(Pair(userReports.hasReports, userReports.reportCount))
             } else {
                 Result.failure(ApiException("Invalid response format"))

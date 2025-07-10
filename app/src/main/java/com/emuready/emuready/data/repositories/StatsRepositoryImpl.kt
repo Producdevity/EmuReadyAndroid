@@ -21,17 +21,18 @@ class StatsRepositoryImpl @Inject constructor(
     override suspend fun getStats(): Result<AppStats> = withContext(Dispatchers.IO) {
         try {
             println("StatsRepository: Starting getStats API call...")
-            val request = requestBuilder.buildQuery(Unit)
+            val request = requestBuilder.buildRequest(Unit)
             println("StatsRepository: Request built: $request")
             
-            val response = trpcApiService.getAppStats(request)
+            val responseWrapper = trpcApiService.getAppStats(request)
+            val response = responseWrapper.`0`
             println("StatsRepository: Response received: $response")
             
             if (response.error != null) {
                 println("StatsRepository: API Error: ${response.error}")
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val stats = response.result.data.json
+            } else if (response.result?.data != null) {
+                val stats = response.result.data
                 println("StatsRepository: Successfully got stats: $stats")
                 Result.success(
                     AppStats(

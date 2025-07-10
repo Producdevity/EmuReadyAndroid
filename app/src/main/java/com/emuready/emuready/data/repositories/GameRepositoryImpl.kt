@@ -8,14 +8,18 @@ import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.mappers.toEntity
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
 import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
-import com.emuready.emuready.data.remote.dto.*
-import com.emuready.emuready.data.remote.api.IdRequest
-import com.emuready.emuready.data.remote.api.LimitRequest
-import com.emuready.emuready.data.remote.api.QueryRequest
+import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
+import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
+import com.emuready.emuready.data.paging.FilteredGamesPagingSource
 import com.emuready.emuready.data.paging.GamesPagingSource
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.domain.entities.GameDetail
+import com.emuready.emuready.domain.entities.Listing
+import com.emuready.emuready.domain.entities.Device
+import com.emuready.emuready.domain.entities.Emulator
 import com.emuready.emuready.domain.entities.GameSortOption
+import com.emuready.emuready.domain.entities.Cpu
+import com.emuready.emuready.domain.entities.Gpu
 import com.emuready.emuready.domain.exceptions.ApiException
 import com.emuready.emuready.domain.exceptions.NetworkException
 import com.emuready.emuready.domain.repositories.GameRepository
@@ -69,35 +73,50 @@ class GameRepositoryImpl @Inject constructor(
     
     override suspend fun getGameDetail(gameId: String): Result<GameDetail> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(IdRequest(gameId))
-            val response = trpcApiService.getGameById(request)
+            // Get game details from API
+            val queryParam = requestBuilder.buildQueryParam("""{"id":"$gameId"}""")
+            val gameResponseWrapper = trpcApiService.getGameById(batch = 1, gameId = queryParam)
+            val gameResponse = gameResponseWrapper.`0`
             
-            if (response.error != null) {
-                Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val mobileGame = response.result.data.json
-                // Convert MobileGame to GameDetail
-                val gameDetail = GameDetail(
-                    id = mobileGame.id,
-                    title = mobileGame.title,
-                    titleId = mobileGame.id,
-                    coverImageUrl = mobileGame.imageUrl ?: "",
-                    screenshotUrls = listOfNotNull(mobileGame.imageUrl),
-                    description = "", // Not provided in mobile API
-                    releaseDate = LocalDate.now(), // Not provided in mobile API
-                    developer = "", // Not provided in mobile API
-                    publisher = "", // Not provided in mobile API
-                    genres = emptyList(), // Not provided in mobile API
-                    compatibilityRatings = emptyMap(), // Would need to be calculated from listings
-                    listings = emptyList(), // Would need separate API call
-                    averageRating = 0.0f, // Not provided in mobile API
-                    totalRatings = 0, // Not provided in mobile API
-                    lastUpdated = Instant.now() // Using current time
-                )
-                Result.success(gameDetail)
-            } else {
-                Result.failure(ApiException("Invalid response format"))
+            if (gameResponse.error != null) {
+                return@withContext Result.failure(ApiException(gameResponse.error.message))
             }
+            
+            val gameData = gameResponse.result?.data
+                ?: return@withContext Result.failure(ApiException("Game not found"))
+            
+            // Get game listings - simplified for now
+            val listings: List<Listing> = emptyList() // Will be enhanced when API integration is stable
+            
+            // Create GameDetail from fetched data
+            val game = gameData.toDomain()
+            val gameDetail = GameDetail(
+                game = game,
+                description = null,
+                screenshots = emptyList<String>(),
+                developer = null,
+                publisher = null,
+                releaseDate = null,
+                genres = emptyList<String>(),
+                recentListings = listings.take(5),
+                topRatedListings = listings.sortedByDescending { it.overallRating }.take(5),
+                compatibleDevices = emptyList<Device>(),
+                recommendedEmulators = emptyList<Emulator>(),
+                averageRating = game.averageCompatibility * 5f,
+                ratingDistribution = emptyMap<Int, Int>(),
+                tags = emptyList<String>(),
+                isVerified = false,
+                lastUpdated = game.lastUpdated
+            )
+            
+            // Cache the game locally
+            try {
+                gameDao.insertGame(game.toEntity())
+            } catch (e: Exception) {
+                // Continue even if caching fails
+            }
+            
+            Result.success(gameDetail)
         } catch (e: Exception) {
             Result.failure(NetworkException("Network error: ${e.message}", e))
         }
@@ -117,34 +136,32 @@ class GameRepositoryImpl @Inject constructor(
     
     override suspend fun getFeaturedGames(): Result<List<Game>> = withContext(Dispatchers.IO) {
         try {
-            println("GameRepository: Starting getFeaturedGames API call...")
-            val request = requestBuilder.buildQuery(LimitRequest(limit = 10))
-            println("GameRepository: Request built: $request")
+            android.util.Log.d("GameRepository", "Calling getPopularGames API...")
+            // For GET requests, pass empty query parameter for endpoints that don't need parameters
+            val responseWrapper = trpcApiService.getPopularGames(input = null)
+            val response = responseWrapper.`0`
             
-            val response = trpcApiService.getPopularGames(request)
-            println("GameRepository: Response received: $response")
+            android.util.Log.d("GameRepository", "API response received. Error: ${response.error}, Result: ${response.result}")
             
             if (response.error != null) {
-                println("GameRepository: API Error: ${response.error}")
+                android.util.Log.e("GameRepository", "API returned error: ${response.error.message}")
                 Result.failure(ApiException(response.error.message))
             } else if (response.result?.data?.json != null) {
                 val games = response.result.data.json.map { it.toDomain() }
-                println("GameRepository: Successfully mapped ${games.size} games")
+                android.util.Log.d("GameRepository", "Successfully parsed ${games.size} games")
                 // Cache featured games
                 try {
                     gameDao.insertGames(games.map { it.toEntity() })
                 } catch (e: Exception) {
-                    println("GameRepository: Error caching games: ${e.message}")
                     // Continue even if caching fails
                 }
                 Result.success(games)
             } else {
-                println("GameRepository: Invalid response format - no data field")
+                android.util.Log.e("GameRepository", "Invalid response format: ${response.result}")
                 Result.failure(ApiException("Invalid response format"))
             }
         } catch (e: Exception) {
-            println("GameRepository: Exception in getFeaturedGames: ${e.message}")
-            e.printStackTrace()
+            android.util.Log.e("GameRepository", "Network error: ${e.message}", e)
             Result.failure(NetworkException("Network error: ${e.message}", e))
         }
     }
@@ -152,8 +169,8 @@ class GameRepositoryImpl @Inject constructor(
     override suspend fun getRecommendations(userId: String): Result<List<Game>> = withContext(Dispatchers.IO) {
         try {
             // Use getPopularGames as there's no specific recommendations endpoint in the new API
-            val request = requestBuilder.buildQuery(LimitRequest(limit = 10))
-            val response = trpcApiService.getPopularGames(request)
+            val responseWrapper = trpcApiService.getPopularGames(input = null)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -184,8 +201,9 @@ class GameRepositoryImpl @Inject constructor(
     
     override suspend fun syncGamesFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(GetGamesSchema(limit = 50))
-            val response = trpcApiService.getGames(request)
+            val queryParam = requestBuilder.buildQueryParam("""{"limit":100}""")
+            val responseWrapper = trpcApiService.getGames(batch = 1, input = queryParam)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -204,20 +222,25 @@ class GameRepositoryImpl @Inject constructor(
     override suspend fun getAvailableFilters(): Map<FilterType, List<FilterOption>> = withContext(Dispatchers.IO) {
         try {
             // Fetch all the filter options from the API
-            val systemsRequest = requestBuilder.buildQuery(Unit)
-            val devicesRequest = requestBuilder.buildQuery(GetDevicesSchema(limit = 100))
-            val emulatorsRequest = requestBuilder.buildQuery(GetEmulatorsSchema(limit = 100))
-            val performanceRequest = requestBuilder.buildQuery(Unit)
+            val systemsRequest = requestBuilder.buildRequest(Unit)
+            val devicesRequest = requestBuilder.buildRequest(TrpcRequestDtos.GetDevicesSchema(limit = 100))
+            val emulatorsRequest = requestBuilder.buildRequest(TrpcRequestDtos.GetEmulatorsSchema(limit = 100))
+            val performanceRequest = requestBuilder.buildRequest(Unit)
             
-            val systemsResponse = trpcApiService.getSystems(systemsRequest)
-            val devicesResponse = trpcApiService.getDevices(devicesRequest)
-            val emulatorsResponse = trpcApiService.getEmulators(emulatorsRequest)
-            val performanceResponse = trpcApiService.getPerformanceScales(performanceRequest)
+            val systemsResponseWrapper = trpcApiService.getSystems(systemsRequest)
+            val devicesResponseWrapper = trpcApiService.getDevices(devicesRequest)
+            val emulatorsResponseWrapper = trpcApiService.getEmulators(emulatorsRequest)
+            val performanceResponseWrapper = trpcApiService.getPerformanceScales(performanceRequest)
+            
+            val systemsResponse = systemsResponseWrapper.`0`
+            val devicesResponse = devicesResponseWrapper.`0`
+            val emulatorsResponse = emulatorsResponseWrapper.`0`
+            val performanceResponse = performanceResponseWrapper.`0`
             
             val filters = mutableMapOf<FilterType, List<FilterOption>>()
             
             // Systems
-            systemsResponse.result?.data?.json?.let { systems ->
+            systemsResponse.result?.data?.let { systems ->
                 filters[FilterType.SYSTEM] = systems.map { system ->
                     FilterOption(
                         id = system.id,
@@ -228,7 +251,7 @@ class GameRepositoryImpl @Inject constructor(
             }
             
             // Devices
-            devicesResponse.result?.data?.json?.let { devices ->
+            devicesResponse.result?.data?.let { devices ->
                 filters[FilterType.DEVICE] = devices.map { device ->
                     FilterOption(
                         id = device.id,
@@ -239,7 +262,7 @@ class GameRepositoryImpl @Inject constructor(
             }
             
             // Emulators
-            emulatorsResponse.result?.data?.json?.let { emulators ->
+            emulatorsResponse.result?.data?.let { emulators ->
                 filters[FilterType.EMULATOR] = emulators.map { emulator ->
                     FilterOption(
                         id = emulator.id,
@@ -250,7 +273,7 @@ class GameRepositoryImpl @Inject constructor(
             }
             
             // Performance
-            performanceResponse.result?.data?.json?.let { performance ->
+            performanceResponse.result?.data?.let { performance ->
                 filters[FilterType.PERFORMANCE] = performance.map { perf ->
                     FilterOption(
                         id = perf.id.toString(),
@@ -266,14 +289,53 @@ class GameRepositoryImpl @Inject constructor(
             emptyMap()
         }
     }
+
+    override suspend fun getCpus(search: String?, brandId: String?, limit: Int?): Result<List<Cpu>> = withContext(Dispatchers.IO) {
+        try {
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetCpusSchema(search = search, brandId = brandId, limit = limit))
+            val responseWrapper = trpcApiService.getCpusEnhanced(request)
+            val response = responseWrapper.`0`
+
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val cpus = response.result.data.items.map { it.toDomain() }
+                Result.success(cpus)
+            } else {
+                Result.failure(ApiException("Invalid response format"))
+            }
+        } catch (e: Exception) {
+            Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
+
+    override suspend fun getGpus(search: String?, brandId: String?, limit: Int?): Result<List<Gpu>> = withContext(Dispatchers.IO) {
+        try {
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetGpusSchema(search = search, brandId = brandId, limit = limit))
+            val responseWrapper = trpcApiService.getGpusEnhanced(request)
+            val response = responseWrapper.`0`
+
+            if (response.error != null) {
+                Result.failure(ApiException(response.error.message))
+            } else if (response.result?.data != null) {
+                val gpus = response.result.data.items.map { it.toDomain() }
+                Result.success(gpus)
+            } else {
+                Result.failure(ApiException("Invalid response format"))
+            }
+        } catch (e: Exception) {
+            Result.failure(NetworkException("Network error: ${e.message}", e))
+        }
+    }
     
     /**
      * Search games using the new tRPC API
      */
-    suspend fun searchGames(query: String): Result<List<Game>> = withContext(Dispatchers.IO) {
+    override suspend fun searchGames(query: String): Result<List<Game>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(QueryRequest(query))
-            val response = trpcApiService.searchGames(request)
+            val queryParam = requestBuilder.buildQueryParam("""{"query":"$query"}""")
+            val responseWrapper = trpcApiService.searchGames(batch = 1, query = queryParam)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -286,5 +348,33 @@ class GameRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(NetworkException("Network error: ${e.message}", e))
         }
+    }
+
+    override fun getGamesFromFilteredListings(
+        search: String?,
+        sortBy: SortOption,
+        systemIds: Set<String>,
+        deviceIds: Set<String>,
+        emulatorIds: Set<String>,
+        performanceIds: Set<String>
+    ): Flow<PagingData<Game>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = {
+                FilteredGamesPagingSource(
+                    trpcApiService = trpcApiService,
+                    requestBuilder = requestBuilder,
+                    search = search,
+                    sortBy = sortBy,
+                    systemIds = systemIds,
+                    deviceIds = deviceIds,
+                    emulatorIds = emulatorIds,
+                    performanceIds = performanceIds
+                )
+            }
+        ).flow
     }
 }

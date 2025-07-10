@@ -35,10 +35,13 @@ class DeviceManagementViewModel @Inject constructor(
     
     private fun observeDeviceChanges() {
         viewModelScope.launch {
-            combine(
-                getCurrentDeviceUseCase(),
-                getDeviceHistoryUseCase()
-            ) { currentDevice, detectedDevices ->
+            try {
+                val currentDeviceResult = getCurrentDeviceUseCase()
+                val detectedDevicesResult = getDeviceHistoryUseCase()
+                
+                val currentDevice = currentDeviceResult.getOrNull()
+                val detectedDevices = detectedDevicesResult.getOrNull() ?: emptyList()
+                
                 val compatibilityInfo = currentDevice?.let { device ->
                     deviceManager.getDeviceCompatibilityInfo(device)
                 }
@@ -49,7 +52,12 @@ class DeviceManagementViewModel @Inject constructor(
                     compatibilityInfo = compatibilityInfo,
                     isLoading = false
                 )
-            }.collect { }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
         }
     }
     
@@ -77,13 +85,20 @@ class DeviceManagementViewModel @Inject constructor(
             
             detectDeviceUseCase().collect { result ->
                 when (result) {
-                    is Result.Loading -> {
+                    is com.emuready.emuready.core.utils.Result.Loading -> {
                         _uiState.value = _uiState.value.copy(isLoading = true)
                     }
-                    is Result.Success -> {
-                        _uiState.value = _uiState.value.copy(isLoading = false)
+                    is com.emuready.emuready.core.utils.Result.Success -> {
+                        val device = result.data
+                        val compatibilityInfo = deviceManager.getDeviceCompatibilityInfo(device)
+                        
+                        _uiState.value = _uiState.value.copy(
+                            currentDevice = device,
+                            compatibilityInfo = compatibilityInfo,
+                            isLoading = false
+                        )
                     }
-                    is Result.Error -> {
+                    is com.emuready.emuready.core.utils.Result.Error -> {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             error = result.message
@@ -96,27 +111,29 @@ class DeviceManagementViewModel @Inject constructor(
     
     fun clearDeviceData() {
         viewModelScope.launch {
-            clearDeviceDataUseCase().collect { result ->
-                when (result) {
-                    is Result.Loading -> {
-                        _uiState.value = _uiState.value.copy(isLoading = true)
-                    }
-                    is Result.Success -> {
-                        _uiState.value = _uiState.value.copy(
-                            currentDevice = null,
-                            detectedDevices = emptyList(),
-                            compatibilityInfo = null,
-                            error = null,
-                            isLoading = false
-                        )
-                    }
-                    is Result.Error -> {
-                        _uiState.value = _uiState.value.copy(
-                            error = result.message,
-                            isLoading = false
-                        )
-                    }
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                
+                val result = clearDeviceDataUseCase()
+                if (result.isSuccess) {
+                    _uiState.value = _uiState.value.copy(
+                        currentDevice = null,
+                        detectedDevices = emptyList(),
+                        compatibilityInfo = null,
+                        error = null,
+                        isLoading = false
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        error = result.exceptionOrNull()?.message,
+                        isLoading = false
+                    )
                 }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message,
+                    isLoading = false
+                )
             }
         }
     }

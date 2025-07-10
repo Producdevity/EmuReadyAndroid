@@ -15,8 +15,8 @@ data class DeviceEntity(
     val storageSize: Int,
     val screenSize: Float,
     val screenResolution: String,
-    val androidVersion: String,
+    val operatingSystem: String,
     val isVerified: Boolean,
     val benchmarkScore: Int?,
-    val registeredAt: Long
+    val registeredAt: String // Store as ISO string
 )

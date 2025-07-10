@@ -64,7 +64,7 @@ private fun DeviceHistoryItem(device: Device) {
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "Detected: ${DateUtils.formatDateTime(device.detectedAt)}",
+                text = "Registered: ${DateUtils.formatDateTime(device.registeredAt.epochSecond * 1000)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -1,25 +1,47 @@
 package com.emuready.emuready.domain.repositories
 
-import com.emuready.emuready.domain.entities.GameListing
-import com.emuready.emuready.domain.entities.CreateListingForm
+import androidx.paging.PagingData
+import com.emuready.emuready.domain.entities.*
 import kotlinx.coroutines.flow.Flow
 
 interface ListingRepository {
-    fun getListingsByGameId(gameId: String): Flow<List<GameListing>>
+    // Basic listing retrieval
+    suspend fun getListingsByGameId(gameId: String): Result<List<Listing>>
     
-    fun getListingsByUserId(userId: String): Flow<List<GameListing>>
+    suspend fun getListingsByUserId(userId: String): Result<List<Listing>>
     
-    fun getListingsByDeviceId(deviceId: String): Flow<List<GameListing>>
+    suspend fun getListingById(listingId: String): Result<Listing>
     
-    suspend fun createListing(form: CreateListingForm): Result<GameListing>
+    suspend fun getFeaturedListings(): Result<List<Listing>>
     
-    suspend fun updateListing(listingId: String, form: CreateListingForm): Result<GameListing>
+    // Paginated listing retrieval
+    fun getListings(
+        search: String? = null,
+        gameId: String? = null,
+        systemId: String? = null,
+        deviceId: String? = null,
+        emulatorId: String? = null
+    ): Flow<PagingData<Listing>>
+    
+    // Listing management
+    suspend fun createListing(form: CreateListingForm): Result<Listing>
+    suspend fun createPcListing(form: CreateListingForm): Result<PcListing>
+    
+    suspend fun updateListing(listingId: String, form: CreateListingForm): Result<Listing>
     
     suspend fun deleteListing(listingId: String): Result<Unit>
     
-    suspend fun likeListing(listingId: String): Result<Unit>
+    // Voting system
+    suspend fun voteListing(listingId: String, isUpvote: Boolean): Result<Unit>
     
-    suspend fun unlikeListing(listingId: String): Result<Unit>
+    suspend fun getUserVote(listingId: String): Result<Boolean?>
     
-    suspend fun syncUserListings(): Result<Unit>
+    // Comments
+    suspend fun getListingComments(listingId: String): Result<List<Comment>>
+    
+    suspend fun createComment(listingId: String, content: String): Result<Comment>
+
+    fun getMobileListingsForGame(gameId: String): Flow<PagingData<Listing>>
+
+    fun getPcListingsForGame(gameId: String): Flow<PagingData<PcListing>>
 }

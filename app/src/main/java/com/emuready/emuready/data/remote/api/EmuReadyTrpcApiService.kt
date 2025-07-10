@@ -1,455 +1,366 @@
 package com.emuready.emuready.data.remote.api
 
 import com.emuready.emuready.data.remote.api.trpc.TrpcRequest
-import com.emuready.emuready.data.remote.api.trpc.TrpcResponse
-import com.emuready.emuready.data.remote.dto.*
-import retrofit2.Response
+import com.emuready.emuready.data.remote.api.trpc.TrpcResponseWrapper
+import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
+import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
 import retrofit2.http.*
 
 /**
  * EmuReady tRPC API Service
- * Based on the official API documentation: https://emuready.com/api/mobile/trpc
+ * Implements ALL endpoints from the official API documentation
+ * Using correct tRPC format: POST requests with proper body structure
  */
 interface EmuReadyTrpcApiService {
     
-    // Authentication endpoints
-    @POST("trpc/auth.validateToken")
-    suspend fun validateToken(@Body request: TrpcRequest<ValidateTokenRequest>): TrpcResponse<ValidateTokenResponse>
+    // ========================================
+    // 1. AUTHENTICATION ENDPOINTS
+    // ========================================
     
-    @POST("trpc/auth.getSession")
-    suspend fun getSession(@Body request: TrpcRequest<Unit>): TrpcResponse<MobileUser>
+    @POST("auth.validateToken")
+    suspend fun validateToken(@Body request: TrpcRequest<TrpcRequestDtos.ValidateTokenRequest>): TrpcResponseWrapper<TrpcResponseDtos.ValidateTokenResponse>
     
-    @POST("trpc/auth.signOut")
-    suspend fun signOut(@Body request: TrpcRequest<Unit>): TrpcResponse<SuccessResponse>
+    @POST("auth.getSession")
+    suspend fun getSession(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.MobileUser>
     
-    @POST("trpc/auth.updateProfile")
-    suspend fun updateProfile(@Body request: TrpcRequest<UpdateProfileRequest>): TrpcResponse<MobileUser>
+    @POST("auth.signOut")
+    suspend fun signOut(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/auth.deleteAccount")
-    suspend fun deleteAccount(@Body request: TrpcRequest<Unit>): TrpcResponse<SuccessResponse>
+    @POST("auth.updateProfile")
+    suspend fun updateProfile(@Body request: TrpcRequest<TrpcRequestDtos.UpdateProfileRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileUser>
     
-    // Listings endpoints - using the correct tRPC GET format
-    @GET("trpc/listings.getFeaturedListings")
-    suspend fun getFeaturedListings(@Query("batch") batch: Int = 1, @Query("input") input: String): List<TrpcResponse<List<MobileListing>>>
+    @POST("auth.deleteAccount")
+    suspend fun deleteAccount(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @GET("trpc/listings.getListings")
-    suspend fun getListings(@Query("batch") batch: Int = 1, @Query("input") input: String): List<TrpcResponse<List<MobileListing>>>
+    // ========================================
+    // 2. LISTINGS ENDPOINTS
+    // ========================================
     
-    @POST("trpc/listings.getListingsByGame")
-    suspend fun getListingsByGame(@Body request: TrpcRequest<GameIdRequest>): TrpcResponse<List<MobileListing>>
+    @GET("listings.get")
+    suspend fun getListings(
+        @Query("batch") batch: Int = 1,
+        @Query("input") input: String
+    ): TrpcResponseWrapper<TrpcResponseDtos.MobileListingsResponse>
     
-    @POST("trpc/listings.getListingById")
-    suspend fun getListingById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileListing>
+    @GET("listings.getFeatured")
+    suspend fun getFeaturedListings(
+        @Query("batch") batch: Int = 1,
+        @Query("input") input: String? = null
+    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
     
-    @POST("trpc/listings.getUserListings")
-    suspend fun getUserListings(@Body request: TrpcRequest<UserIdRequest>): TrpcResponse<List<MobileListing>>
+    @GET("listings.getByGame")
+    suspend fun getListingsByGame(
+        @Query("batch") batch: Int = 1,
+        @Query("input") input: String
+    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
     
-    @POST("trpc/listings.createListing")
-    suspend fun createListing(@Body request: TrpcRequest<CreateListingSchema>): TrpcResponse<MobileListing>
+    @GET("listings.getById")
+    suspend fun getListingById(
+        @Query("batch") batch: Int = 1,
+        @Query("input") input: String
+    ): TrpcResponseWrapper<TrpcResponseDtos.MobileListing>
     
-    @POST("trpc/listings.updateListing")
-    suspend fun updateListing(@Body request: TrpcRequest<UpdateListingSchema>): TrpcResponse<MobileListing>
+    @GET("listings.getUserListings")
+    suspend fun getUserListings(
+        @Query("batch") batch: Int = 1,
+        @Query("input") input: String
+    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
     
-    @POST("trpc/listings.deleteListing")
-    suspend fun deleteListing(@Body request: TrpcRequest<IdRequest>): TrpcResponse<SuccessResponse>
+    @POST("listings.createListing")
+    suspend fun createListing(@Body request: TrpcRequest<TrpcRequestDtos.CreateListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobileListing>
     
-    @POST("trpc/listings.voteListing")
-    suspend fun voteListing(@Body request: TrpcRequest<VoteRequest>): TrpcResponse<SuccessResponse>
+    @POST("listings.updateListing")
+    suspend fun updateListing(@Body request: TrpcRequest<TrpcRequestDtos.UpdateListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobileListing>
     
-    @POST("trpc/listings.getUserVote")
-    suspend fun getUserVote(@Body request: TrpcRequest<ListingIdRequest>): TrpcResponse<UserVoteResponse>
+    @POST("listings.deleteListing")
+    suspend fun deleteListing(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    // Comments endpoints
-    @POST("trpc/listings.getListingComments")
-    suspend fun getListingComments(@Body request: TrpcRequest<ListingIdRequest>): TrpcResponse<MobileCommentsResponse>
+    @POST("listings.voteListing")
+    suspend fun voteListing(@Body request: TrpcRequest<TrpcRequestDtos.VoteRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/listings.createComment")
-    suspend fun createComment(@Body request: TrpcRequest<CreateCommentRequest>): TrpcResponse<MobileComment>
+    @GET("listings.getUserVote")
+    suspend fun getUserVote(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.UserVoteResponse>
     
-    @POST("trpc/listings.updateComment")
-    suspend fun updateComment(@Body request: TrpcRequest<UpdateCommentRequest>): TrpcResponse<MobileComment>
+    // ========================================
+    // 3. COMMENTS ENDPOINTS  
+    // ========================================
     
-    @POST("trpc/listings.deleteComment")
-    suspend fun deleteComment(@Body request: TrpcRequest<CommentIdRequest>): TrpcResponse<SuccessResponse>
+    @GET("listings.getListingComments")
+    suspend fun getListingComments(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileCommentsResponse>
     
-    // PC Listings endpoints
-    @POST("trpc/pcListings.getPcListings")
-    suspend fun getPcListings(@Body request: TrpcRequest<GetPcListingsSchema>): TrpcResponse<MobilePcListingsResponse>
+    @POST("listings.createComment")
+    suspend fun createComment(@Body request: TrpcRequest<TrpcRequestDtos.CreateCommentRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileComment>
     
-    @POST("trpc/pcListings.createPcListing")
-    suspend fun createPcListing(@Body request: TrpcRequest<CreatePcListingSchema>): TrpcResponse<MobilePcListing>
+    @POST("listings.updateComment")
+    suspend fun updateComment(@Body request: TrpcRequest<TrpcRequestDtos.UpdateCommentRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileComment>
     
-    @POST("trpc/pcListings.updatePcListing")
-    suspend fun updatePcListing(@Body request: TrpcRequest<UpdatePcListingSchema>): TrpcResponse<MobilePcListing>
+    @POST("listings.deleteComment")
+    suspend fun deleteComment(@Body request: TrpcRequest<TrpcRequestDtos.CommentIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/pcListings.getCpus")
-    suspend fun getCpus(@Body request: TrpcRequest<SearchWithBrandRequest>): TrpcResponse<List<MobileCpu>>
+    // ========================================
+    // 4. PC LISTINGS ENDPOINTS
+    // ========================================
     
-    @POST("trpc/pcListings.getGpus")
-    suspend fun getGpus(@Body request: TrpcRequest<SearchWithBrandRequest>): TrpcResponse<List<MobileGpu>>
+    @POST("pcListings.getPcListings")
+    suspend fun getPcListings(@Body request: TrpcRequest<TrpcRequestDtos.GetPcListingsSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcListingsResponse>
     
-    // PC Presets endpoints
-    @POST("trpc/pcListings.getPcPresets")
-    suspend fun getPcPresets(@Body request: TrpcRequest<LimitRequest>): TrpcResponse<List<MobilePcPreset>>
+    @POST("pcListings.createPcListing")
+    suspend fun createPcListing(@Body request: TrpcRequest<TrpcRequestDtos.CreatePcListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcListing>
     
-    @POST("trpc/pcListings.createPcPreset")
-    suspend fun createPcPreset(@Body request: TrpcRequest<CreatePcPresetSchema>): TrpcResponse<MobilePcPreset>
+    @POST("pcListings.updatePcListing")
+    suspend fun updatePcListing(@Body request: TrpcRequest<TrpcRequestDtos.UpdatePcListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcListing>
     
-    @POST("trpc/pcListings.updatePcPreset")
-    suspend fun updatePcPreset(@Body request: TrpcRequest<UpdatePcPresetSchema>): TrpcResponse<MobilePcPreset>
+    @POST("pcListings.getCpus")
+    suspend fun getCpus(@Body request: TrpcRequest<TrpcRequestDtos.SearchWithBrandRequest>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileCpu>>
     
-    @POST("trpc/pcListings.deletePcPreset")
-    suspend fun deletePcPreset(@Body request: TrpcRequest<IdRequest>): TrpcResponse<SuccessResponse>
+    @POST("pcListings.getGpus")
+    suspend fun getGpus(@Body request: TrpcRequest<TrpcRequestDtos.SearchWithBrandRequest>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileGpu>>
     
-    // Games endpoints
-    @POST("trpc/games.getGames")
-    suspend fun getGames(@Body request: TrpcRequest<GetGamesSchema>): TrpcResponse<List<MobileGame>>
+    // ========================================
+    // 5. PC PRESETS ENDPOINTS
+    // ========================================
     
-    @POST("trpc/games.getPopularGames")
-    suspend fun getPopularGames(@Body request: TrpcRequest<LimitRequest>): TrpcResponse<List<MobileGame>>
+    @POST("pcListings.getPcPresets")
+    suspend fun getPcPresets(@Body request: TrpcRequest<TrpcRequestDtos.LimitRequest>): TrpcResponseWrapper<List<TrpcResponseDtos.MobilePcPreset>>
     
-    @POST("trpc/games.searchGames")
-    suspend fun searchGames(@Body request: TrpcRequest<QueryRequest>): TrpcResponse<List<MobileGame>>
+    @POST("pcListings.createPcPreset")
+    suspend fun createPcPreset(@Body request: TrpcRequest<TrpcRequestDtos.CreatePcPresetSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcPreset>
     
-    @POST("trpc/games.getGameById")
-    suspend fun getGameById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileGame>
+    @POST("pcListings.updatePcPreset")
+    suspend fun updatePcPreset(@Body request: TrpcRequest<TrpcRequestDtos.UpdatePcPresetSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcPreset>
     
-    // Devices endpoints
-    @POST("trpc/devices.getDevices")
-    suspend fun getDevices(@Body request: TrpcRequest<GetDevicesSchema>): TrpcResponse<List<MobileDevice>>
+    @POST("pcListings.deletePcPreset")
+    suspend fun deletePcPreset(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/devices.getDeviceBrands")
-    suspend fun getDeviceBrands(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileBrand>>
+    // ========================================
+    // 6. GAMES ENDPOINTS
+    // ========================================
     
-    @POST("trpc/devices.getSocs")
-    suspend fun getSocs(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileSoc>>
+    @GET("games.get")
+    suspend fun getGames(
+        @Query("batch") batch: Int = 1,
+        @Query("input") input: String
+    ): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
     
-    // Emulators endpoints
-    @POST("trpc/emulators.getEmulators")
-    suspend fun getEmulators(@Body request: TrpcRequest<GetEmulatorsSchema>): TrpcResponse<List<MobileEmulator>>
+    @GET("games.getPopular")
+    suspend fun getPopularGames(
+        @Query("batch") batch: Int = 1,
+        @Query("input") input: String? = null
+    ): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
     
-    @POST("trpc/emulators.getEmulatorById")
-    suspend fun getEmulatorById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileEmulator>
+    @GET("games.search")
+    suspend fun searchGames(
+        @Query("batch") batch: Int = 1,
+        @Query("input") query: String
+    ): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
     
-    // General endpoints
-    @POST("trpc/general.getAppStats")
-    suspend fun getAppStats(@Body request: TrpcRequest<Unit>): TrpcResponse<MobileStats>
+    @GET("games.getById")
+    suspend fun getGameById(
+        @Query("batch") batch: Int = 1,
+        @Query("input") gameId: String
+    ): TrpcResponseWrapper<TrpcResponseDtos.MobileGame>
     
-    @POST("trpc/general.getSystems")
-    suspend fun getSystems(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileSystem>>
+    // ========================================
+    // 7. DEVICES ENDPOINTS
+    // ========================================
     
-    @POST("trpc/general.getPerformanceScales")
-    suspend fun getPerformanceScales(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobilePerformance>>
+    @POST("devices.getDevices")
+    suspend fun getDevices(@Body request: TrpcRequest<TrpcRequestDtos.GetDevicesSchema>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileDevice>>
     
-    @POST("trpc/general.getSearchSuggestions")
-    suspend fun getSearchSuggestions(@Body request: TrpcRequest<SearchSuggestionsRequest>): TrpcResponse<List<MobileSearchSuggestion>>
+    @POST("devices.getDeviceBrands")
+    suspend fun getDeviceBrands(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileBrand>>
     
+    @POST("devices.getSocs")
+    suspend fun getSocs(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileSoc>>
     
-    // Notifications endpoints
-    @POST("trpc/notifications.getNotifications")
-    suspend fun getNotifications(@Body request: TrpcRequest<GetNotificationsSchema>): TrpcResponse<List<MobileNotification>>
+    // ========================================
+    // 8. EMULATORS ENDPOINTS
+    // ========================================
     
-    @POST("trpc/notifications.getUnreadNotificationCount")
-    suspend fun getUnreadNotificationCount(@Body request: TrpcRequest<Unit>): TrpcResponse<CountResponse>
+    @POST("emulators.getEmulators")
+    suspend fun getEmulators(@Body request: TrpcRequest<TrpcRequestDtos.GetEmulatorsSchema>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileEmulator>>
     
-    @POST("trpc/notifications.markNotificationAsRead")
-    suspend fun markNotificationAsRead(@Body request: TrpcRequest<NotificationIdRequest>): TrpcResponse<SuccessResponse>
+    @POST("emulators.getEmulatorById")
+    suspend fun getEmulatorById(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileEmulator>
     
-    @POST("trpc/notifications.markAllNotificationsAsRead")
-    suspend fun markAllNotificationsAsRead(@Body request: TrpcRequest<Unit>): TrpcResponse<SuccessResponse>
+    // ========================================
+    // 9. GENERAL DATA ENDPOINTS
+    // ========================================
     
-    // User Preferences endpoints
-    @POST("trpc/preferences.getUserPreferences")
-    suspend fun getUserPreferences(@Body request: TrpcRequest<Unit>): TrpcResponse<MobileUserProfile>
+    @POST("general.getAppStats")
+    suspend fun getAppStats(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.MobileStats>
     
-    @POST("trpc/preferences.updateUserPreferences")
-    suspend fun updateUserPreferences(@Body request: TrpcRequest<UpdateUserPreferencesSchema>): TrpcResponse<MobileUserProfile>
+    @POST("general.getSystems")
+    suspend fun getSystems(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileSystem>>
     
-    @POST("trpc/preferences.addDevicePreference")
-    suspend fun addDevicePreference(@Body request: TrpcRequest<DeviceIdRequest>): TrpcResponse<SuccessResponse>
+    @POST("general.getPerformanceScales")
+    suspend fun getPerformanceScales(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<List<TrpcResponseDtos.MobilePerformance>>
     
-    @POST("trpc/preferences.removeDevicePreference")
-    suspend fun removeDevicePreference(@Body request: TrpcRequest<DeviceIdRequest>): TrpcResponse<SuccessResponse>
+    @POST("general.getSearchSuggestions")
+    suspend fun getSearchSuggestions(@Body request: TrpcRequest<TrpcRequestDtos.SearchSuggestionsRequest>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileSearchSuggestion>>
     
-    @POST("trpc/preferences.bulkUpdateDevicePreferences")
-    suspend fun bulkUpdateDevicePreferences(@Body request: TrpcRequest<DeviceIdsRequest>): TrpcResponse<SuccessResponse>
+    @POST("general.getTrustLevels")
+    suspend fun getTrustLevels(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileTrustLevel>>
     
-    @POST("trpc/preferences.bulkUpdateSocPreferences")
-    suspend fun bulkUpdateSocPreferences(@Body request: TrpcRequest<SocIdsRequest>): TrpcResponse<SuccessResponse>
+    // ========================================
+    // 10. NOTIFICATIONS ENDPOINTS
+    // ========================================
     
-    @POST("trpc/preferences.getUserProfile")
-    suspend fun getUserProfile(@Body request: TrpcRequest<UserIdRequest>): TrpcResponse<MobileUserProfile>
+    @POST("notifications.getNotifications")
+    suspend fun getNotifications(@Body request: TrpcRequest<TrpcRequestDtos.GetNotificationsSchema>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileNotification>>
     
-    @POST("trpc/preferences.updateProfile")
-    suspend fun updateUserProfile(@Body request: TrpcRequest<UpdateProfileSchema>): TrpcResponse<MobileUserProfile>
+    @POST("notifications.getUnreadNotificationCount")
+    suspend fun getUnreadNotificationCount(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.CountResponse>
     
-    // Developer Verification endpoints
-    @POST("trpc/developers.getMyVerifiedEmulators")
-    suspend fun getMyVerifiedEmulators(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileEmulator>>
+    @POST("notifications.markNotificationAsRead")
+    suspend fun markNotificationAsRead(@Body request: TrpcRequest<TrpcRequestDtos.NotificationIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/developers.isVerifiedDeveloper")
-    suspend fun isVerifiedDeveloper(@Body request: TrpcRequest<EmulatorIdRequest>): TrpcResponse<SuccessResponse>
+    @POST("notifications.markAllNotificationsAsRead")
+    suspend fun markAllNotificationsAsRead(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/developers.verifyListing")
-    suspend fun verifyListing(@Body request: TrpcRequest<VerifyListingRequest>): TrpcResponse<MobileVerification>
+    // ========================================
+    // 11. USER PREFERENCES ENDPOINTS
+    // ========================================
     
-    @POST("trpc/developers.removeVerification")
-    suspend fun removeVerification(@Body request: TrpcRequest<IdRequest>): TrpcResponse<SuccessResponse>
+    @POST("preferences.getUserPreferences")
+    suspend fun getUserPreferences(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
     
-    @POST("trpc/developers.getListingVerifications")
-    suspend fun getListingVerifications(@Body request: TrpcRequest<ListingIdRequest>): TrpcResponse<MobileListingVerificationsResponse>
+    @POST("preferences.updateUserPreferences")
+    suspend fun updateUserPreferences(@Body request: TrpcRequest<TrpcRequestDtos.UpdateUserPreferencesSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
     
-    @POST("trpc/developers.getMyVerifications")
-    suspend fun getMyVerifications(@Body request: TrpcRequest<PaginationRequest>): TrpcResponse<List<MobileVerification>>
+    @POST("preferences.addDevicePreference")
+    suspend fun addDevicePreference(@Body request: TrpcRequest<TrpcRequestDtos.DeviceIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    // Trust System endpoints
-    @POST("trpc/trust.getMyTrustInfo")
-    suspend fun getMyTrustInfo(@Body request: TrpcRequest<Unit>): TrpcResponse<TrustInfo>
+    @POST("preferences.removeDevicePreference")
+    suspend fun removeDevicePreference(@Body request: TrpcRequest<TrpcRequestDtos.DeviceIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/trust.getUserTrustInfo")
-    suspend fun getUserTrustInfo(@Body request: TrpcRequest<UserIdRequest>): TrpcResponse<TrustInfo>
+    @POST("preferences.bulkUpdateDevicePreferences")
+    suspend fun bulkUpdateDevicePreferences(@Body request: TrpcRequest<TrpcRequestDtos.DeviceIdsRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/trust.getTrustLevels")
-    suspend fun getTrustLevels(@Body request: TrpcRequest<Unit>): TrpcResponse<List<MobileTrustLevel>>
+    @POST("preferences.bulkUpdateSocPreferences")
+    suspend fun bulkUpdateSocPreferences(@Body request: TrpcRequest<TrpcRequestDtos.SocIdsRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    // Content Reporting endpoints
-    @POST("trpc/listingReports.create")
-    suspend fun createListingReport(@Body request: TrpcRequest<CreateListingReportSchema>): TrpcResponse<ListingReportResponse>
+    @POST("preferences.getUserProfile")
+    suspend fun getUserProfile(@Body request: TrpcRequest<TrpcRequestDtos.UserIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
     
-    @POST("trpc/listingReports.checkUserHasReports")
-    suspend fun checkUserHasReports(@Body request: TrpcRequest<UserIdRequest>): TrpcResponse<UserReportsInfo>
+    @POST("preferences.updateProfile")
+    suspend fun updateUserProfile(@Body request: TrpcRequest<TrpcRequestDtos.UpdateProfileSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
     
-    // Custom Fields endpoints
-    @POST("trpc/customFieldDefinitions.getByEmulator")
-    suspend fun getCustomFieldsByEmulator(@Body request: TrpcRequest<EmulatorIdRequest>): TrpcResponse<List<MobileCustomFieldDefinition>>
+    // ========================================
+    // 12. DEVELOPER VERIFICATION ENDPOINTS
+    // ========================================
     
-    // Enhanced Hardware endpoints
-    @POST("trpc/cpus.get")
-    suspend fun getCpusEnhanced(@Body request: TrpcRequest<GetCpusSchema>): TrpcResponse<HardwarePaginationResponse<MobileCpu>>
+    @POST("developers.getMyVerifiedEmulators")
+    suspend fun getMyVerifiedEmulators(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileEmulatorVerification>>
     
-    @POST("trpc/cpus.getById")
-    suspend fun getCpuById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileCpu>
+    @POST("developers.isVerifiedDeveloper")
+    suspend fun isVerifiedDeveloper(@Body request: TrpcRequest<TrpcRequestDtos.VerifyDeveloperRequest>): TrpcResponseWrapper<TrpcResponseDtos.VerifyDeveloperResponse>
     
-    @POST("trpc/gpus.get")
-    suspend fun getGpusEnhanced(@Body request: TrpcRequest<GetGpusSchema>): TrpcResponse<HardwarePaginationResponse<MobileGpu>>
+    @POST("developers.verifyListing")
+    suspend fun verifyListing(@Body request: TrpcRequest<TrpcRequestDtos.VerifyListingRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/gpus.getById")
-    suspend fun getGpuById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileGpu>
+    @POST("developers.removeVerification")
+    suspend fun removeVerification(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
-    @POST("trpc/socs.get")
-    suspend fun getSocsEnhanced(@Body request: TrpcRequest<GetSoCsSchema>): TrpcResponse<HardwarePaginationResponse<MobileSoc>>
+    @POST("developers.getListingVerifications")
+    suspend fun getListingVerifications(@Body request: TrpcRequest<TrpcRequestDtos.ListingIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileListingVerificationsResponse>
     
-    @POST("trpc/socs.getById")
-    suspend fun getSocById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileSoc>
+    @POST("developers.getMyVerifications")
+    suspend fun getMyVerifications(@Body request: TrpcRequest<TrpcRequestDtos.PaginationRequest>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileVerification>>
     
-    @POST("trpc/deviceBrands.get")
-    suspend fun getDeviceBrandsEnhanced(@Body request: TrpcRequest<GetDeviceBrandsSchema>): TrpcResponse<List<MobileDeviceBrand>>
+    // ========================================
+    // 13. CONTENT REPORTING ENDPOINTS
+    // ========================================
     
-    @POST("trpc/deviceBrands.getById")
-    suspend fun getDeviceBrandById(@Body request: TrpcRequest<IdRequest>): TrpcResponse<MobileDeviceBrand>
+    @POST("listingReports.create")
+    suspend fun createListingReport(@Body request: TrpcRequest<TrpcRequestDtos.CreateListingReportSchema>): TrpcResponseWrapper<TrpcResponseDtos.ListingReportResponse>
     
-    // External Game Data endpoints
-    @POST("trpc/rawg.searchGameImages")
-    suspend fun searchRawgGameImages(@Body request: TrpcRequest<SearchGameImagesSchema>): TrpcResponse<Map<String, List<GameImageOption>>>
+    @POST("listingReports.checkUserHasReports")
+    suspend fun checkUserHasReports(@Body request: TrpcRequest<TrpcRequestDtos.UserIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.UserReportsInfo>
     
-    @POST("trpc/rawg.searchGames")
-    suspend fun searchRawgGames(@Body request: TrpcRequest<SearchGamesSchema>): TrpcResponse<RawgGameResponse>
+    // ========================================
+    // 14. TRUST SYSTEM ENDPOINTS
+    // ========================================
     
-    @POST("trpc/rawg.getGameImages")
-    suspend fun getRawgGameImages(@Body request: TrpcRequest<GetGameImagesRequest>): TrpcResponse<List<GameImageOption>>
+    @POST("trust.getMyTrustInfo")
+    suspend fun getMyTrustInfo(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<TrpcResponseDtos.TrustInfo>
     
-    @POST("trpc/tgdb.searchGameImages")
-    suspend fun searchTgdbGameImages(@Body request: TrpcRequest<SearchTgdbGameImagesRequest>): TrpcResponse<Map<String, List<GameImageOption>>>
+    @POST("trust.getUserTrustInfo")
+    suspend fun getUserTrustInfo(@Body request: TrpcRequest<TrpcRequestDtos.UserIdRequest>): TrpcResponseWrapper<TrpcResponseDtos.TrustInfo>
     
-    @POST("trpc/tgdb.searchGames")
-    suspend fun searchTgdbGames(@Body request: TrpcRequest<SearchTgdbGamesRequest>): TrpcResponse<TgdbGameResponse>
+    // ========================================
+    // 15. CUSTOM FIELDS ENDPOINTS
+    // ========================================
     
-    @POST("trpc/tgdb.getGameImageUrls")
-    suspend fun getTgdbGameImageUrls(@Body request: TrpcRequest<GetTgdbGameImageUrlsRequest>): TrpcResponse<GameImageUrls>
+    @POST("customFieldDefinitions.getByEmulator")
+    suspend fun getCustomFieldsByEmulator(@Body request: TrpcRequest<TrpcRequestDtos.EmulatorIdRequest>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileCustomFieldDefinition>>
     
-    @POST("trpc/tgdb.getGameImages")
-    suspend fun getTgdbGameImages(@Body request: TrpcRequest<GetTgdbGameImagesRequest>): TrpcResponse<Any>
+    // ========================================
+    // 16. HARDWARE DATA ENDPOINTS
+    // ========================================
     
-    @POST("trpc/tgdb.getPlatforms")
-    suspend fun getTgdbPlatforms(@Body request: TrpcRequest<Unit>): TrpcResponse<List<TgdbPlatform>>
+    // CPUs
+    @POST("cpus.get")
+    suspend fun getCpusEnhanced(@Body request: TrpcRequest<TrpcRequestDtos.GetCpusSchema>): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileCpu>>
     
-    // Enhanced User Profile endpoints
-    @POST("trpc/users.getUserById")
-    suspend fun getUserById(@Body request: TrpcRequest<GetUserByIdSchema>): TrpcResponse<EnhancedMobileUserProfile>
+    @POST("cpus.getById")
+    suspend fun getCpuById(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileCpu>
+    
+    // GPUs
+    @POST("gpus.get")
+    suspend fun getGpusEnhanced(@Body request: TrpcRequest<TrpcRequestDtos.GetGpusSchema>): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileGpu>>
+    
+    @POST("gpus.getById")
+    suspend fun getGpuById(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileGpu>
+    
+    // SoCs
+    @POST("socs.get")
+    suspend fun getSocsEnhanced(@Body request: TrpcRequest<TrpcRequestDtos.GetSoCsSchema>): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileSoc>>
+    
+    @POST("socs.getById")
+    suspend fun getSocById(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileSoc>
+    
+    // Device Brands
+    @POST("deviceBrands.get")
+    suspend fun getDeviceBrandsEnhanced(@Body request: TrpcRequest<TrpcRequestDtos.GetDeviceBrandsSchema>): TrpcResponseWrapper<List<TrpcResponseDtos.MobileDeviceBrand>>
+    
+    @POST("deviceBrands.getById")
+    suspend fun getDeviceBrandById(@Body request: TrpcRequest<TrpcRequestDtos.IdRequest>): TrpcResponseWrapper<TrpcResponseDtos.MobileDeviceBrand>
+    
+    // ========================================
+    // 17. EXTERNAL GAME DATA ENDPOINTS
+    // ========================================
+    
+    // RAWG Integration
+    @POST("rawg.searchGameImages")
+    suspend fun searchRawgGameImages(@Body request: TrpcRequest<TrpcRequestDtos.SearchGameImagesSchema>): TrpcResponseWrapper<Map<String, List<TrpcResponseDtos.GameImageOption>>>
+    
+    @POST("rawg.searchGames")
+    suspend fun searchRawgGames(@Body request: TrpcRequest<TrpcRequestDtos.SearchGamesSchema>): TrpcResponseWrapper<TrpcResponseDtos.RawgGameResponse>
+    
+    @POST("rawg.getGameImages")
+    suspend fun getRawgGameImages(@Body request: TrpcRequest<TrpcRequestDtos.GetGameImagesRequest>): TrpcResponseWrapper<List<TrpcResponseDtos.GameImageOption>>
+    
+    // TGDB Integration
+    @POST("tgdb.searchGameImages")
+    suspend fun searchTgdbGameImages(@Body request: TrpcRequest<TrpcRequestDtos.SearchTgdbGameImagesRequest>): TrpcResponseWrapper<Map<String, List<TrpcResponseDtos.GameImageOption>>>
+    
+    @POST("tgdb.searchGames")
+    suspend fun searchTgdbGames(@Body request: TrpcRequest<TrpcRequestDtos.SearchTgdbGamesRequest>): TrpcResponseWrapper<TrpcResponseDtos.TgdbGameResponse>
+    
+    @POST("tgdb.getGameImageUrls")
+    suspend fun getTgdbGameImageUrls(@Body request: TrpcRequest<TrpcRequestDtos.GetTgdbGameImageUrlsRequest>): TrpcResponseWrapper<TrpcResponseDtos.GameImageUrls>
+    
+    @POST("tgdb.getGameImages")
+    suspend fun getTgdbGameImages(@Body request: TrpcRequest<TrpcRequestDtos.GetTgdbGameImagesRequest>): TrpcResponseWrapper<Any>
+    
+    @POST("tgdb.getPlatforms")
+    suspend fun getTgdbPlatforms(@Body request: TrpcRequest<Unit>): TrpcResponseWrapper<List<TrpcResponseDtos.TgdbPlatform>>
+    
+    // ========================================
+    // 18. USER PROFILES ENDPOINTS
+    // ========================================
+    
+    @POST("users.getUserById")
+    suspend fun getUserById(@Body request: TrpcRequest<TrpcRequestDtos.GetUserByIdSchema>): TrpcResponseWrapper<TrpcResponseDtos.EnhancedMobileUserProfile>
 }
-
-// Request DTOs for specific endpoint parameters
-
-@kotlinx.serialization.Serializable
-data class ValidateTokenRequest(
-    val token: String
-)
-
-@kotlinx.serialization.Serializable
-data class UpdateProfileRequest(
-    val name: String? = null,
-    val bio: String? = null
-)
-
-@kotlinx.serialization.Serializable
-data class LimitRequest(
-    val limit: Int? = 10
-)
-
-@kotlinx.serialization.Serializable
-data class GameIdRequest(
-    val gameId: String
-)
-
-@kotlinx.serialization.Serializable
-data class IdRequest(
-    val id: String
-)
-
-@kotlinx.serialization.Serializable
-data class UserIdRequest(
-    val userId: String
-)
-
-@kotlinx.serialization.Serializable
-data class ListingIdRequest(
-    val listingId: String
-)
-
-@kotlinx.serialization.Serializable
-data class VoteRequest(
-    val listingId: String,
-    val value: Boolean
-)
-
-@kotlinx.serialization.Serializable
-data class CreateCommentRequest(
-    val listingId: String,
-    val content: String
-)
-
-@kotlinx.serialization.Serializable
-data class UpdateCommentRequest(
-    val commentId: String,
-    val content: String
-)
-
-@kotlinx.serialization.Serializable
-data class CommentIdRequest(
-    val commentId: String
-)
-
-@kotlinx.serialization.Serializable
-data class SearchWithBrandRequest(
-    val search: String? = null,
-    val brandId: String? = null,
-    val limit: Int? = 50
-)
-
-@kotlinx.serialization.Serializable
-data class UpdatePcListingSchema(
-    val id: String,
-    val performanceId: Int? = null,
-    val memorySize: Int? = null,
-    val os: String? = null,
-    val osVersion: String? = null,
-    val notes: String? = null,
-    val customFieldValues: List<CustomFieldValueInput>? = null
-)
-
-@kotlinx.serialization.Serializable
-data class UpdatePcPresetSchema(
-    val id: String,
-    val name: String? = null,
-    val cpuId: String? = null,
-    val gpuId: String? = null,
-    val memorySize: Int? = null,
-    val os: String? = null,
-    val osVersion: String? = null
-)
-
-@kotlinx.serialization.Serializable
-data class QueryRequest(
-    val query: String
-)
-
-@kotlinx.serialization.Serializable
-data class SearchSuggestionsRequest(
-    val query: String,
-    val limit: Int? = 10
-)
-
-@kotlinx.serialization.Serializable
-data class NotificationIdRequest(
-    val notificationId: String
-)
-
-@kotlinx.serialization.Serializable
-data class DeviceIdRequest(
-    val deviceId: String
-)
-
-@kotlinx.serialization.Serializable
-data class DeviceIdsRequest(
-    val deviceIds: List<String>
-)
-
-@kotlinx.serialization.Serializable
-data class SocIdsRequest(
-    val socIds: List<String>
-)
-
-@kotlinx.serialization.Serializable
-data class UpdateProfileSchema(
-    val name: String? = null,
-    val bio: String? = null,
-    val email: String? = null
-)
-
-// Additional Request DTOs for new endpoints
-
-@kotlinx.serialization.Serializable
-data class EmulatorIdRequest(
-    val emulatorId: String
-)
-
-@kotlinx.serialization.Serializable
-data class VerifyListingRequest(
-    val listingId: String,
-    val notes: String? = null
-)
-
-@kotlinx.serialization.Serializable
-data class PaginationRequest(
-    val limit: Int? = 20,
-    val page: Int? = 1
-)
-
-@kotlinx.serialization.Serializable
-data class GetGameImagesRequest(
-    val gameId: Int,
-    val gameName: String
-)
-
-@kotlinx.serialization.Serializable
-data class SearchTgdbGameImagesRequest(
-    val query: String,
-    val tgdbPlatformId: Int
-)
-
-@kotlinx.serialization.Serializable
-data class SearchTgdbGamesRequest(
-    val query: String,
-    val tgdbPlatformId: Int,
-    val page: Int? = null
-)
-
-@kotlinx.serialization.Serializable
-data class GetTgdbGameImageUrlsRequest(
-    val gameId: Int
-)
-
-@kotlinx.serialization.Serializable
-data class GetTgdbGameImagesRequest(
-    val gameIds: List<Int>
-)

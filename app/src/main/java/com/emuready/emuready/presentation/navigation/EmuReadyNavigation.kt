@@ -48,6 +48,31 @@ fun EmuReadyNavigation(
             )
         }
         
+        composable(Screen.Games.route) {
+            BrowseScreen(
+                onNavigateToGame = { gameId ->
+                    navController.navigate(Screen.GameDetail.createRoute(gameId))
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.Listings.route) {
+            ListingsScreen(
+                onNavigateToListing = { listingId ->
+                    navController.navigate(Screen.ListingDetail.createRoute(listingId))
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToCreate = {
+                    navController.navigate(Screen.Create.route)
+                }
+            )
+        }
+        
         composable(Screen.Create.route) {
             CreateListingScreen(
                 onNavigateBack = {
@@ -55,6 +80,9 @@ fun EmuReadyNavigation(
                 },
                 onListingCreated = {
                     navController.popBackStack()
+                },
+                onNavigateToSignIn = {
+                    navController.navigate(Screen.Login.route)
                 }
             )
         }
@@ -138,28 +166,22 @@ fun EmuReadyNavigation(
         }
         
         composable(Screen.Login.route) {
-            LoginScreen(
-                onNavigateToRegister = {
+            SignInScreen(
+                onNavigateToSignUp = {
                     navController.navigate(Screen.Register.route)
                 },
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onLoginSuccess = {
+                onSignInSuccess = {
                     navController.popBackStack()
                 }
             )
         }
         
         composable(Screen.Register.route) {
-            RegisterScreen(
-                onNavigateToLogin = {
-                    navController.navigate(Screen.Login.route)
-                },
+            SignUpScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onRegisterSuccess = {
+                onSignUpSuccess = {
                     navController.popBackStack()
                 }
             )

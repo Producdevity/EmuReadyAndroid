@@ -9,7 +9,18 @@
       "Bash(grep:*)",
       "Bash(true)",
       "Bash(awk:*)",
-      "Bash(curl:*)"
+      "Bash(ls:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(wget:*)",
+      "Bash(sdkmanager:*)",
+      "Bash(touch:*)",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(adb logcat:*)",
+      "Bash(adb:*)"
     ],
     "deny": []
   }

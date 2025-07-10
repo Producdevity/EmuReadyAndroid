@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.presentation.ui.theme.*
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,23 +41,25 @@ fun EnhancedGameCard(
     var isPressed by remember { mutableStateOf(false) }
     var isHovered by remember { mutableStateOf(false) }
     
+    val haptic = LocalHapticFeedback.current
+    
     val scale by animateFloatAsState(
         targetValue = when {
-            isPressed -> MicroAnimations.ButtonPressScale
-            isHovered -> MicroAnimations.CardHoverScale
+            isPressed -> 0.95f
+            isHovered -> 1.02f
             else -> 1f
         },
-        animationSpec = SpringSpecs.Quick,
+        animationSpec = EmuAnimations.CardSpring,
         label = "card_scale"
     )
     
     val elevation by animateDpAsState(
         targetValue = when {
-            isPressed -> ElevationAnimations.CardPressed
-            isHovered -> ElevationAnimations.CardHovered
-            else -> ElevationAnimations.CardIdle
+            isPressed -> 2.dp
+            isHovered -> 12.dp
+            else -> 6.dp
         },
-        animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth),
+        animationSpec = tween(EmuAnimations.Duration.QUICK, easing = EmuAnimations.SmoothEasing),
         label = "card_elevation"
     )
     
@@ -73,6 +77,7 @@ fun EnhancedGameCard(
                 interactionSource = interactionSource,
                 indication = null
             ) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onClick()
             },
         shape = RoundedCornerShape(16.dp),
@@ -174,9 +179,9 @@ fun EnhancedGameCard(
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // Developer/Publisher
+                // System/Platform
                 Text(
-                    text = game.developer,
+                    text = game.system.name,
                     style = CustomTextStyles.GameSubtitle,
                     color = OnSurfaceVariant,
                     maxLines = 1,
@@ -185,21 +190,33 @@ fun EnhancedGameCard(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Genres Row
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+                // Compatibility Stats Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(game.genres.take(3)) { genre ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = PrimaryContainer.copy(alpha = 0.3f)
+                    ) {
+                        Text(
+                            text = "${game.totalListings} listings",
+                            style = CustomTextStyles.Caption,
+                            color = OnPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    
+                    if (game.hasCompatibilityData) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = PrimaryContainer.copy(alpha = 0.3f),
-                            modifier = Modifier.animateItemPlacement()
+                            color = SuccessGreen.copy(alpha = 0.2f)
                         ) {
                             Text(
-                                text = genre,
+                                text = "${game.compatibilityPercentage}% compatible",
                                 style = CustomTextStyles.Caption,
-                                color = OnPrimaryContainer,
+                                color = SuccessGreen,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }

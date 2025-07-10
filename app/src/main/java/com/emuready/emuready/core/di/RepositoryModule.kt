@@ -1,6 +1,7 @@
 package com.emuready.emuready.core.di
 
 import com.emuready.emuready.data.repositories.*
+import com.emuready.emuready.data.services.EdenLaunchService
 import com.emuready.emuready.domain.repositories.*
 import dagger.Binds
 import dagger.Module
@@ -65,4 +66,16 @@ abstract class RepositoryModule {
     abstract fun bindCustomFieldRepository(
         customFieldRepositoryImpl: CustomFieldRepositoryImpl
     ): CustomFieldRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindEmulatorRepository(
+        emulatorRepositoryImpl: EmulatorRepositoryImpl
+    ): EmulatorRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindNotificationRepository(
+        notificationRepositoryImpl: NotificationRepositoryImpl
+    ): NotificationRepository
 }

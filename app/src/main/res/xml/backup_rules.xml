@@ -3,11 +3,6 @@
     <!-- Include user preferences and app settings -->
     <include domain="sharedpref" path="app_preferences.xml"/>
     <include domain="sharedpref" path="user_settings.xml"/>
-    <include domain="sharedpref" path="auth_tokens.xml"/>
-    <include domain="sharedpref" path="device_prefs.xml"/>
-    <include domain="database" path="auth.db"/>
-    <include domain="file" path="image_cache/"/>
-    <include domain="file" path="temp/"/>
     
     <!-- Exclude sensitive data -->
     <exclude domain="sharedpref" path="auth_tokens.xml"/>

@@ -21,23 +21,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     
-    // OkHttpClient and Json providers removed to avoid conflicts with EmuReadyApiClient
+    // Network configuration is now handled by EmuReadyApiModule
+    // Old API services removed since we use tRPC API exclusively
     
-    @Provides
-    @Singleton
-    fun provideGameApiService(@Named("rest") retrofit: Retrofit): GameApiService {
-        return retrofit.create(GameApiService::class.java)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideListingApiService(@Named("rest") retrofit: Retrofit): ListingApiService {
-        return retrofit.create(ListingApiService::class.java)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideAuthApiService(@Named("rest") retrofit: Retrofit): AuthApiService {
-        return retrofit.create(AuthApiService::class.java)
-    }
 }

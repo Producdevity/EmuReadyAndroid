@@ -6,7 +6,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -44,6 +53,9 @@ import coil.compose.AsyncImage
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.presentation.components.GameCoverImage
 import com.emuready.emuready.presentation.ui.theme.Spacing
+import com.emuready.emuready.presentation.ui.theme.EmuAnimations
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.emuready.emuready.presentation.viewmodels.BrowseViewModel
 import com.emuready.emuready.presentation.viewmodels.FilterType
 import com.emuready.emuready.presentation.viewmodels.SortOption
@@ -162,24 +174,33 @@ fun BrowseScreen(
                             }
                         }
                         
-                        // Floating scroll to top button
+                        // Premium Floating scroll to top button with animations
                         if (scrollState.firstVisibleItemIndex > 5) {
                             FloatingActionButton(
                                 onClick = {
                                     coroutineScope.launch {
-                                        scrollState.animateScrollToItem(0)
+                                        scrollState.animateScrollToItem(
+                                            index = 0,
+                                            scrollOffset = 0
+                                        )
                                     }
                                 },
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
-                                    .padding(16.dp)
-                                    .size(48.dp)
+                                    .padding(24.dp)
+                                    .size(56.dp)
+                                    .shadow(
+                                        elevation = 12.dp,
+                                        shape = CircleShape,
+                                        clip = false
+                                    )
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.KeyboardArrowUp,
-                                    contentDescription = "Scroll to top"
+                                    contentDescription = "Scroll to top",
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
@@ -405,35 +426,75 @@ private fun FilterCategory(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            options.forEach { option ->
-                FilterChip(
-                    selected = option.id in selectedOptions,
-                    onClick = { onOptionToggle(option.id) },
-                    label = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(option.name)
-                            if (option.count > 0) {
-                                Text(
-                                    text = "(${option.count})",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+            options.forEachIndexed { index, option ->
+                val animationDelay = index * 30L
+                var isVisible by remember { mutableStateOf(false) }
+                val haptic = LocalHapticFeedback.current
+                
+                LaunchedEffect(Unit) {
+                    delay(animationDelay)
+                    isVisible = true
+                }
+                
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(
+                        animationSpec = tween(
+                            EmuAnimations.Duration.NORMAL,
+                            delayMillis = animationDelay.toInt()
+                        )
+                    ) + scaleIn(
+                        animationSpec = tween(
+                            EmuAnimations.Duration.NORMAL,
+                            delayMillis = animationDelay.toInt(),
+                            easing = EmuAnimations.BounceEasing
+                        ),
+                        initialScale = 0.8f
+                    )
+                ) {
+                    FilterChip(
+                        selected = option.id in selectedOptions,
+                        onClick = { 
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onOptionToggle(option.id) 
+                        },
+                        label = {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(option.name)
+                                if (option.count > 0) {
+                                    Text(
+                                        text = "(${option.count})",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
-                        }
-                    },
-                    leadingIcon = if (option.id in selectedOptions) {
-                        {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    } else null
-                )
+                        },
+                        leadingIcon = if (option.id in selectedOptions) {
+                            {
+                                AnimatedVisibility(
+                                    visible = true,
+                                    enter = scaleIn(
+                                        animationSpec = tween(
+                                            EmuAnimations.Duration.QUICK,
+                                            easing = EmuAnimations.BounceEasing
+                                        )
+                                    ) + fadeIn()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        } else null,
+                        modifier = Modifier.animateContentSize()
+                    )
+                }
             }
         }
     }
@@ -445,40 +506,98 @@ private fun GameCard(
     onClick: () -> Unit,
     index: Int
 ) {
-    val animationDelay = index * 50
+    val haptic = LocalHapticFeedback.current
+    val animationDelay = (index * EmuAnimations.Duration.STAGGER_DELAY).toInt()
     var isVisible by remember { mutableStateOf(false) }
+    var isPressed by remember { mutableStateOf(false) }
+    var isHovered by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
         delay(animationDelay.toLong())
         isVisible = true
     }
     
+    // Premium animation states
+    val scale by animateFloatAsState(
+        targetValue = when {
+            isPressed -> 0.95f
+            isHovered -> 1.02f
+            else -> 1f
+        },
+        animationSpec = EmuAnimations.CardSpring,
+        label = "card_scale"
+    )
+    
+    val elevation by animateFloatAsState(
+        targetValue = when {
+            isPressed -> 2f
+            isHovered -> 12f
+            else -> 6f
+        },
+        animationSpec = EmuAnimations.NormalTween,
+        label = "card_elevation"
+    )
+    
+    val borderAlpha by animateFloatAsState(
+        targetValue = if (isHovered) 0.8f else 0f,
+        animationSpec = EmuAnimations.QuickTween,
+        label = "border_alpha"
+    )
+    
     AnimatedVisibility(
         visible = isVisible,
-        enter = fadeIn(animationSpec = tween(300)) + scaleIn(
-            initialScale = 0.8f,
-            animationSpec = tween(300)
+        enter = slideInVertically(
+            animationSpec = tween(
+                EmuAnimations.Duration.NORMAL,
+                delayMillis = animationDelay,
+                easing = EmuAnimations.PremiumEaseOut
+            ),
+            initialOffsetY = { it / 2 }
+        ) + fadeIn(
+            animationSpec = tween(
+                EmuAnimations.Duration.NORMAL,
+                delayMillis = animationDelay,
+                easing = EmuAnimations.PremiumEaseOut
+            )
+        ) + scaleIn(
+            animationSpec = tween(
+                EmuAnimations.Duration.NORMAL,
+                delayMillis = animationDelay,
+                easing = EmuAnimations.PremiumEaseOut
+            ),
+            initialScale = 0.8f
         )
     ) {
         Card(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {
-                    onClick()
-                }
                 .graphicsLayer {
-                    val scale = if (isVisible) 1f else 0.8f
                     scaleX = scale
                     scaleY = scale
+                    shadowElevation = elevation
+                }
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClickLabel = "Open ${game.title}"
+                ) {
+                    isPressed = !isPressed
                 },
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 4.dp,
-                pressedElevation = 8.dp
-            ),
-            shape = RoundedCornerShape(12.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = elevation.dp),
+            shape = RoundedCornerShape(16.dp),
+            border = if (borderAlpha > 0) {
+                androidx.compose.foundation.BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = borderAlpha)
+                )
+            } else null,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
             Column {
                 // Game Cover with Gradient Overlay
@@ -510,7 +629,7 @@ private fun GameCard(
                     )
                     
                     // Listing count badge
-                    if (game.listingCount > 0) {
+                    if (game.totalListings > 0) {
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
@@ -530,7 +649,7 @@ private fun GameCard(
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = game.listingCount.toString(),
+                                    text = game.totalListings.toString(),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -564,7 +683,7 @@ private fun GameCard(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (game.averageRating > 0) {
+                        if (game.averageCompatibility > 0) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -576,7 +695,7 @@ private fun GameCard(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = String.format("%.1f", game.averageRating),
+                                    text = String.format("%.1f", game.averageCompatibility * 5),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )

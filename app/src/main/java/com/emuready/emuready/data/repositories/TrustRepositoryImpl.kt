@@ -2,10 +2,7 @@ package com.emuready.emuready.data.repositories
 
 import com.emuready.emuready.data.mappers.*
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.EmulatorIdRequest
-import com.emuready.emuready.data.remote.api.ListingIdRequest
-import com.emuready.emuready.data.remote.api.UserIdRequest
-import com.emuready.emuready.data.remote.api.VerifyListingRequest
+import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
 import com.emuready.emuready.domain.entities.TrustLevel
 import com.emuready.emuready.domain.entities.UserTrustInfo
@@ -27,13 +24,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getMyTrustInfo(): Result<UserTrustInfo> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(Unit)
-            val response = trpcApiService.getMyTrustInfo(request)
+            val request = requestBuilder.buildRequest(Unit)
+            val responseWrapper = trpcApiService.getMyTrustInfo(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val trustInfo = response.result.data.json.toDomain()
+            } else if (response.result?.data != null) {
+                val trustInfo = response.result.data.toDomain()
                 Result.success(trustInfo)
             } else {
                 Result.failure(ApiException("Invalid response format"))
@@ -45,13 +43,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getUserTrustInfo(userId: String): Result<UserTrustInfo> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(UserIdRequest(userId))
-            val response = trpcApiService.getUserTrustInfo(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.UserIdRequest(userId))
+            val responseWrapper = trpcApiService.getUserTrustInfo(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val trustInfo = response.result.data.json.toDomain()
+            } else if (response.result?.data != null) {
+                val trustInfo = response.result.data.toDomain()
                 Result.success(trustInfo)
             } else {
                 Result.failure(ApiException("Invalid response format"))
@@ -63,13 +62,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getTrustLevels(): Result<List<TrustLevel>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(Unit)
-            val response = trpcApiService.getTrustLevels(request)
+            val request = requestBuilder.buildRequest(Unit)
+            val responseWrapper = trpcApiService.getTrustLevels(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val trustLevels = response.result.data.json.map { it.toDomain() }
+            } else if (response.result?.data != null) {
+                val trustLevels = response.result.data.map { it.toDomain() }
                 Result.success(trustLevels)
             } else {
                 Result.failure(ApiException("Invalid response format"))
@@ -81,13 +81,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun isVerifiedDeveloper(emulatorId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(EmulatorIdRequest(emulatorId))
-            val response = trpcApiService.isVerifiedDeveloper(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.VerifyDeveloperRequest("", emulatorId))
+            val responseWrapper = trpcApiService.isVerifiedDeveloper(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val isVerified = response.result.data.json.success
+            } else if (response.result?.data != null) {
+                val isVerified = response.result.data.isVerified
                 Result.success(isVerified)
             } else {
                 Result.failure(ApiException("Invalid response format"))
@@ -99,15 +100,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun verifyListing(listingId: String, notes: String?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(VerifyListingRequest(listingId, notes))
-            val response = trpcApiService.verifyListing(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.VerifyListingRequest(listingId, notes))
+            val responseWrapper = trpcApiService.verifyListing(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                Result.success(Unit)
             } else {
-                Result.failure(ApiException("Invalid response format"))
+                Result.success(Unit)
             }
         } catch (e: Exception) {
             Result.failure(NetworkException("Network error: ${e.message}", e))
@@ -116,15 +116,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun removeVerification(verificationId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(com.emuready.emuready.data.remote.api.IdRequest(verificationId))
-            val response = trpcApiService.removeVerification(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.IdRequest(verificationId))
+            val responseWrapper = trpcApiService.removeVerification(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                Result.success(Unit)
             } else {
-                Result.failure(ApiException("Invalid response format"))
+                Result.success(Unit)
             }
         } catch (e: Exception) {
             Result.failure(NetworkException("Network error: ${e.message}", e))
@@ -133,13 +132,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getListingVerifications(listingId: String): Result<List<Verification>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(ListingIdRequest(listingId))
-            val response = trpcApiService.getListingVerifications(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.ListingIdRequest(listingId))
+            val responseWrapper = trpcApiService.getListingVerifications(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val verifications = response.result.data.json.verifications.map { it.toDomain() }
+            } else if (response.result?.data != null) {
+                val verifications = (response.result.data as? List<*>)?.mapNotNull { (it as? com.emuready.emuready.data.remote.dto.TrpcResponseDtos.MobileVerification)?.toDomain() } ?: emptyList()
                 Result.success(verifications)
             } else {
                 Result.failure(ApiException("Invalid response format"))
@@ -151,13 +151,14 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getMyVerifications(): Result<List<Verification>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildQuery(com.emuready.emuready.data.remote.api.PaginationRequest())
-            val response = trpcApiService.getMyVerifications(request)
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.PaginationRequest(page = 1, limit = 50))
+            val responseWrapper = trpcApiService.getMyVerifications(request)
+            val response = responseWrapper.`0`
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data?.json != null) {
-                val verifications = response.result.data.json.map { it.toDomain() }
+            } else if (response.result?.data != null) {
+                val verifications = (response.result.data as? List<*>)?.mapNotNull { (it as? com.emuready.emuready.data.remote.dto.TrpcResponseDtos.MobileVerification)?.toDomain() } ?: emptyList()
                 Result.success(verifications)
             } else {
                 Result.failure(ApiException("Invalid response format"))
@@ -166,5 +167,4 @@ class TrustRepositoryImpl @Inject constructor(
             Result.failure(NetworkException("Network error: ${e.message}", e))
         }
     }
-    
 }
