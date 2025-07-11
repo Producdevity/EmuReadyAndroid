@@ -26,8 +26,7 @@ class DeviceRepositoryImpl @Inject constructor(
     
     override suspend fun getDevices(search: String?, brandId: String?): Result<List<Device>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetDevicesSchema(search = search, brandId = brandId))
-            val responseWrapper = trpcApiService.getDevices(request)
+            val responseWrapper = trpcApiService.getDevices(search = search, brandId = brandId, limit = null)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -46,8 +45,7 @@ class DeviceRepositoryImpl @Inject constructor(
     override suspend fun getDeviceById(deviceId: String): Result<Device> = withContext(Dispatchers.IO) {
         try {
             // Note: API doesn't have specific getDeviceById, so we search by ID
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetDevicesSchema(search = deviceId))
-            val responseWrapper = trpcApiService.getDevices(request)
+            val responseWrapper = trpcApiService.getDevices(search = deviceId, brandId = null, limit = null)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -69,8 +67,7 @@ class DeviceRepositoryImpl @Inject constructor(
     
     override suspend fun getDeviceBrands(): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(Unit)
-            val responseWrapper = trpcApiService.getDeviceBrands(request)
+            val responseWrapper = trpcApiService.getDeviceBrands()
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -88,8 +85,7 @@ class DeviceRepositoryImpl @Inject constructor(
     
     override suspend fun getSoCs(search: String?): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(Unit)
-            val responseWrapper = trpcApiService.getSocs(request)
+            val responseWrapper = trpcApiService.getSocs()
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -168,8 +164,7 @@ class DeviceRepositoryImpl @Inject constructor(
     
     override suspend fun getPopularDevices(limit: Int): Result<List<Device>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetDevicesSchema(limit = limit))
-            val responseWrapper = trpcApiService.getDevices(request)
+            val responseWrapper = trpcApiService.getDevices(search = null, brandId = null, limit = limit)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -195,8 +190,7 @@ class DeviceRepositoryImpl @Inject constructor(
         os: String?
     ): Result<List<Device>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetDevicesSchema(search = query, brandId = brand))
-            val responseWrapper = trpcApiService.getDevices(request)
+            val responseWrapper = trpcApiService.getDevices(search = query, brandId = brand, limit = null)
             val response = responseWrapper.`0`
             
             if (response.error != null) {

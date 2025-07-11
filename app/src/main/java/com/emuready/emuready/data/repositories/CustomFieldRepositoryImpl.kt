@@ -22,8 +22,7 @@ class CustomFieldRepositoryImpl @Inject constructor(
     
     override suspend fun getCustomFieldsByEmulator(emulatorId: String): Result<List<CustomFieldDefinition>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.EmulatorIdRequest(emulatorId))
-            val responseWrapper = trpcApiService.getCustomFieldsByEmulator(request)
+            val responseWrapper = trpcApiService.getCustomFieldsByEmulator(emulatorId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {

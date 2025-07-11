@@ -27,7 +27,11 @@ class PcListingsPagingSource(
                     gameId = gameId
                 )
             )
-            val responseWrapper = trpcApiService.getPcListings(request)
+            val responseWrapper = trpcApiService.getPcListings(
+                page = page,
+                limit = params.loadSize,
+                gameId = gameId
+            )
             val response = responseWrapper.`0`
 
             if (response.error != null) {

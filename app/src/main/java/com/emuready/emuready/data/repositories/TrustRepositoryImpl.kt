@@ -24,8 +24,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getMyTrustInfo(): Result<UserTrustInfo> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(Unit)
-            val responseWrapper = trpcApiService.getMyTrustInfo(request)
+            val responseWrapper = trpcApiService.getMyTrustInfo()
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -43,8 +42,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getUserTrustInfo(userId: String): Result<UserTrustInfo> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.UserIdRequest(userId))
-            val responseWrapper = trpcApiService.getUserTrustInfo(request)
+            val responseWrapper = trpcApiService.getUserTrustInfo(userId = userId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -62,8 +60,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getTrustLevels(): Result<List<TrustLevel>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(Unit)
-            val responseWrapper = trpcApiService.getTrustLevels(request)
+            val responseWrapper = trpcApiService.getTrustLevels()
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -81,8 +78,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun isVerifiedDeveloper(emulatorId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.VerifyDeveloperRequest("", emulatorId))
-            val responseWrapper = trpcApiService.isVerifiedDeveloper(request)
+            val responseWrapper = trpcApiService.isVerifiedDeveloper(userId = "", emulatorId = emulatorId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -100,8 +96,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun verifyListing(listingId: String, notes: String?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.VerifyListingRequest(listingId, notes))
-            val responseWrapper = trpcApiService.verifyListing(request)
+            val responseWrapper = trpcApiService.verifyListing(TrpcRequestBuilder().buildRequest(TrpcRequestDtos.VerifyListingSchema(listingId = listingId, notes = notes)))
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -116,8 +111,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun removeVerification(verificationId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.IdRequest(verificationId))
-            val responseWrapper = trpcApiService.removeVerification(request)
+            val responseWrapper = trpcApiService.removeVerification(TrpcRequestBuilder().buildRequest(TrpcRequestDtos.RemoveVerificationSchema(verificationId = verificationId)))
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -132,8 +126,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getListingVerifications(listingId: String): Result<List<Verification>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.ListingIdRequest(listingId))
-            val responseWrapper = trpcApiService.getListingVerifications(request)
+            val responseWrapper = trpcApiService.getListingVerifications(listingId = listingId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -151,8 +144,7 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getMyVerifications(): Result<List<Verification>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.PaginationRequest(page = 1, limit = 50))
-            val responseWrapper = trpcApiService.getMyVerifications(request)
+            val responseWrapper = trpcApiService.getMyVerifications(limit = 50, page = 1)
             val response = responseWrapper.`0`
             
             if (response.error != null) {

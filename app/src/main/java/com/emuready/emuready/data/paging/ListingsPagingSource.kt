@@ -33,7 +33,7 @@ class ListingsPagingSource(
                 val listings = if (gameId != null) {
                     // Use getListingsByGame for game-specific listings
                     val queryParam = createQueryParam(TrpcRequestDtos.GameIdRequest(gameId = gameId))
-                    val responseWrapper = trpcApiService.getListingsByGame(batch = 1, input = queryParam)
+                    val responseWrapper = trpcApiService.getListingsByGame(gameId = gameId)
                     val response = responseWrapper.`0`
                     
                     if (response.error != null) {
@@ -53,7 +53,15 @@ class ListingsPagingSource(
                             emulatorId = emulatorId
                         )
                     )
-                    val responseWrapper = trpcApiService.getListings(batch = 1, input = queryParam)
+                    val responseWrapper = trpcApiService.getListings(
+                        page = (offset / params.loadSize) + 1,
+                        limit = params.loadSize,
+                        gameId = null,
+                        systemId = null,
+                        deviceId = deviceId,
+                        emulatorId = emulatorId,
+                        search = null
+                    )
                     val response = responseWrapper.`0`
                     
                     if (response.error != null) {

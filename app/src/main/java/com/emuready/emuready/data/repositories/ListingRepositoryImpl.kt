@@ -57,8 +57,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getListingsByGameId(gameId: String): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = createQueryParam(TrpcRequestDtos.GameIdRequest(gameId))
-            val responseWrapper = trpcApiService.getListingsByGame(batch = 1, input = queryParam)
+            val responseWrapper = trpcApiService.getListingsByGame(gameId = gameId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -76,8 +75,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getListingsByUserId(userId: String): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = createQueryParam(TrpcRequestDtos.UserIdRequest(userId))
-            val responseWrapper = trpcApiService.getUserListings(batch = 1, input = queryParam)
+            val responseWrapper = trpcApiService.getUserListings(userId = userId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -95,8 +93,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getListingById(listingId: String): Result<Listing> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = createQueryParam(TrpcRequestDtos.IdRequest(listingId))
-            val responseWrapper = trpcApiService.getListingById(batch = 1, input = queryParam)
+            val responseWrapper = trpcApiService.getListingById(id = listingId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -114,8 +111,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getFeaturedListings(): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = createQueryParam(TrpcRequestDtos.LimitRequest(10))
-            val responseWrapper = trpcApiService.getFeaturedListings(batch = 1, input = queryParam)
+            val responseWrapper = trpcApiService.getFeaturedListings()
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -221,7 +217,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun deleteListing(listingId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.IdRequest(listingId))
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.DeleteListingSchema(id = listingId))
             val responseWrapper = trpcApiService.deleteListing(request)
             val response = responseWrapper.`0`
             
@@ -237,7 +233,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun voteListing(listingId: String, isUpvote: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.VoteRequest(listingId, isUpvote))
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.VoteListingSchema(listingId = listingId, value = isUpvote))
             val responseWrapper = trpcApiService.voteListing(request)
             val response = responseWrapper.`0`
             
@@ -253,8 +249,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getUserVote(listingId: String): Result<Boolean?> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = createQueryParam(TrpcRequestDtos.ListingIdRequest(listingId))
-            val responseWrapper = trpcApiService.getUserVote(queryParam)
+            val responseWrapper = trpcApiService.getUserVote(listingId = listingId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -272,8 +267,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getListingComments(listingId: String): Result<List<Comment>> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = createQueryParam(TrpcRequestDtos.ListingIdRequest(listingId))
-            val responseWrapper = trpcApiService.getListingComments(queryParam)
+            val responseWrapper = trpcApiService.getListingComments(listingId = listingId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -291,7 +285,7 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun createComment(listingId: String, content: String): Result<Comment> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.CreateCommentRequest(listingId, content))
+            val request = requestBuilder.buildRequest(TrpcRequestDtos.CreateCommentSchema(listingId = listingId, content = content))
             val responseWrapper = trpcApiService.createComment(request)
             val response = responseWrapper.`0`
             

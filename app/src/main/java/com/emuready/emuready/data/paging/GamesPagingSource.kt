@@ -43,7 +43,11 @@ class GamesPagingSource(
             
             // Make tRPC request
             val queryParam = createQueryParam(requestData)
-            val responseWrapper = trpcApiService.getGames(batch = 1, input = queryParam)
+            val responseWrapper = trpcApiService.getGames(
+                search = search,
+                systemId = systemIds.firstOrNull(),
+                limit = params.loadSize
+            )
             val response = responseWrapper.`0`
             
             if (response.error != null) {

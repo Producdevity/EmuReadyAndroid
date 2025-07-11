@@ -21,10 +21,7 @@ class StatsRepositoryImpl @Inject constructor(
     override suspend fun getStats(): Result<AppStats> = withContext(Dispatchers.IO) {
         try {
             println("StatsRepository: Starting getStats API call...")
-            val request = requestBuilder.buildRequest(Unit)
-            println("StatsRepository: Request built: $request")
-            
-            val responseWrapper = trpcApiService.getAppStats(request)
+            val responseWrapper = trpcApiService.getAppStats()
             val response = responseWrapper.`0`
             println("StatsRepository: Response received: $response")
             

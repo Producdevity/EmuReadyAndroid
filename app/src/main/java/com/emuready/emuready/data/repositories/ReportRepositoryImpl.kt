@@ -53,8 +53,7 @@ class ReportRepositoryImpl @Inject constructor(
     
     override suspend fun checkUserHasReports(userId: String): Result<Pair<Boolean, Int>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.UserIdRequest(userId))
-            val responseWrapper = trpcApiService.checkUserHasReports(request)
+            val responseWrapper = trpcApiService.checkUserHasReports(userId = userId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {

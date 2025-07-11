@@ -27,7 +27,7 @@ class MobileListingsPagingSource(
             
             // Use getListingsByGame for game-specific listings
             val queryParam = createQueryParam(TrpcRequestDtos.GameIdRequest(gameId = gameId))
-            val responseWrapper = trpcApiService.getListingsByGame(batch = 1, input = queryParam)
+            val responseWrapper = trpcApiService.getListingsByGame(gameId = gameId)
             val response = responseWrapper.`0`
             
             if (response.error != null) {

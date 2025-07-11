@@ -74,8 +74,7 @@ class GameRepositoryImpl @Inject constructor(
     override suspend fun getGameDetail(gameId: String): Result<GameDetail> = withContext(Dispatchers.IO) {
         try {
             // Get game details from API
-            val queryParam = requestBuilder.buildQueryParam("""{"id":"$gameId"}""")
-            val gameResponseWrapper = trpcApiService.getGameById(batch = 1, gameId = queryParam)
+            val gameResponseWrapper = trpcApiService.getGameById(id = gameId)
             val gameResponse = gameResponseWrapper.`0`
             
             if (gameResponse.error != null) {
@@ -138,7 +137,7 @@ class GameRepositoryImpl @Inject constructor(
         try {
             android.util.Log.d("GameRepository", "Calling getPopularGames API...")
             // For GET requests, pass empty query parameter for endpoints that don't need parameters
-            val responseWrapper = trpcApiService.getPopularGames(input = null)
+            val responseWrapper = trpcApiService.getPopularGames()
             val response = responseWrapper.`0`
             
             android.util.Log.d("GameRepository", "API response received. Error: ${response.error}, Result: ${response.result}")
@@ -169,7 +168,7 @@ class GameRepositoryImpl @Inject constructor(
     override suspend fun getRecommendations(userId: String): Result<List<Game>> = withContext(Dispatchers.IO) {
         try {
             // Use getPopularGames as there's no specific recommendations endpoint in the new API
-            val responseWrapper = trpcApiService.getPopularGames(input = null)
+            val responseWrapper = trpcApiService.getPopularGames()
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -201,8 +200,7 @@ class GameRepositoryImpl @Inject constructor(
     
     override suspend fun syncGamesFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = requestBuilder.buildQueryParam("""{"limit":100}""")
-            val responseWrapper = trpcApiService.getGames(batch = 1, input = queryParam)
+            val responseWrapper = trpcApiService.getGames(search = null, systemId = null, limit = 100)
             val response = responseWrapper.`0`
             
             if (response.error != null) {
@@ -222,15 +220,10 @@ class GameRepositoryImpl @Inject constructor(
     override suspend fun getAvailableFilters(): Map<FilterType, List<FilterOption>> = withContext(Dispatchers.IO) {
         try {
             // Fetch all the filter options from the API
-            val systemsRequest = requestBuilder.buildRequest(Unit)
-            val devicesRequest = requestBuilder.buildRequest(TrpcRequestDtos.GetDevicesSchema(limit = 100))
-            val emulatorsRequest = requestBuilder.buildRequest(TrpcRequestDtos.GetEmulatorsSchema(limit = 100))
-            val performanceRequest = requestBuilder.buildRequest(Unit)
-            
-            val systemsResponseWrapper = trpcApiService.getSystems(systemsRequest)
-            val devicesResponseWrapper = trpcApiService.getDevices(devicesRequest)
-            val emulatorsResponseWrapper = trpcApiService.getEmulators(emulatorsRequest)
-            val performanceResponseWrapper = trpcApiService.getPerformanceScales(performanceRequest)
+            val systemsResponseWrapper = trpcApiService.getSystems()
+            val devicesResponseWrapper = trpcApiService.getDevices(search = null, brandId = null, limit = 100)
+            val emulatorsResponseWrapper = trpcApiService.getEmulators(systemId = null, search = null, limit = 100)
+            val performanceResponseWrapper = trpcApiService.getPerformanceScales()
             
             val systemsResponse = systemsResponseWrapper.`0`
             val devicesResponse = devicesResponseWrapper.`0`
@@ -292,8 +285,7 @@ class GameRepositoryImpl @Inject constructor(
 
     override suspend fun getCpus(search: String?, brandId: String?, limit: Int?): Result<List<Cpu>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetCpusSchema(search = search, brandId = brandId, limit = limit))
-            val responseWrapper = trpcApiService.getCpusEnhanced(request)
+            val responseWrapper = trpcApiService.getCpusEnhanced(search = search, brandId = brandId, limit = limit)
             val response = responseWrapper.`0`
 
             if (response.error != null) {
@@ -311,8 +303,7 @@ class GameRepositoryImpl @Inject constructor(
 
     override suspend fun getGpus(search: String?, brandId: String?, limit: Int?): Result<List<Gpu>> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.GetGpusSchema(search = search, brandId = brandId, limit = limit))
-            val responseWrapper = trpcApiService.getGpusEnhanced(request)
+            val responseWrapper = trpcApiService.getGpusEnhanced(search = search, brandId = brandId, limit = limit)
             val response = responseWrapper.`0`
 
             if (response.error != null) {
@@ -333,8 +324,7 @@ class GameRepositoryImpl @Inject constructor(
      */
     override suspend fun searchGames(query: String): Result<List<Game>> = withContext(Dispatchers.IO) {
         try {
-            val queryParam = requestBuilder.buildQueryParam("""{"query":"$query"}""")
-            val responseWrapper = trpcApiService.searchGames(batch = 1, query = queryParam)
+            val responseWrapper = trpcApiService.searchGames(query = query)
             val response = responseWrapper.`0`
             
             if (response.error != null) {

@@ -19,6 +19,67 @@ data class ValidateTokenRequest(
 )
 
 @Serializable
+data class MobileSignInRequest(
+    val email: String,
+    val password: String
+)
+
+@Serializable
+data class MobileSignUpRequest(
+    val email: String,
+    val password: String,
+    val firstName: String,
+    val lastName: String
+)
+
+@Serializable
+data class MobileOAuthSignInRequest(
+    val provider: String, // "google", "apple", "github", "discord"
+    val redirectUrl: String? = null
+)
+
+@Serializable
+data class RefreshTokenRequest(
+    val refreshToken: String
+)
+
+@Serializable
+data class VerifyEmailRequest(
+    val code: String,
+    val clerkUserId: String
+)
+
+@Serializable
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+@Serializable
+data class ResetPasswordRequest(
+    val code: String,
+    val password: String,
+    val clerkUserId: String
+)
+
+@Serializable
+data class UpdateMobileProfileRequest(
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val profileImageUrl: String? = null
+)
+
+@Serializable
+data class ChangeMobilePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String
+)
+
+@Serializable
+data class DeleteMobileAccountRequest(
+    val confirmationText: String // Must be "DELETE"
+)
+
+@Serializable
 data class UpdateProfileRequest(
     val name: String? = null,
     val bio: String? = null
@@ -112,6 +173,17 @@ data class VoteRequest(
     val value: Boolean
 )
 
+@Serializable
+data class DeleteListingSchema(
+    val id: String
+)
+
+@Serializable
+data class VoteListingSchema(
+    val listingId: String,
+    val value: Boolean
+)
+
 // ========================================
 // COMMENTS REQUEST DTOS
 // ========================================
@@ -123,9 +195,26 @@ data class CreateCommentRequest(
 )
 
 @Serializable
+data class CreateCommentSchema(
+    val listingId: String,
+    val content: String
+)
+
+@Serializable
 data class UpdateCommentRequest(
     val commentId: String,
     val content: String
+)
+
+@Serializable
+data class UpdateCommentSchema(
+    val commentId: String,
+    val content: String
+)
+
+@Serializable
+data class DeleteCommentSchema(
+    val commentId: String
 )
 
 @Serializable
@@ -207,6 +296,11 @@ data class UpdatePcPresetSchema(
     val osVersion: String? = null
 )
 
+@Serializable
+data class DeletePcPresetSchema(
+    val id: String
+)
+
 // ========================================
 // GAMES REQUEST DTOS (additional params)
 // ========================================
@@ -262,6 +356,11 @@ data class NotificationIdRequest(
     val notificationId: String
 )
 
+@Serializable
+data class MarkNotificationReadSchema(
+    val notificationId: String
+)
+
 // ========================================
 // USER PREFERENCES REQUEST DTOS
 // ========================================
@@ -277,6 +376,26 @@ data class UpdateUserPreferencesSchema(
 @Serializable
 data class DeviceIdRequest(
     val deviceId: String
+)
+
+@Serializable
+data class AddDevicePreferenceSchema(
+    val deviceId: String
+)
+
+@Serializable
+data class RemoveDevicePreferenceSchema(
+    val deviceId: String
+)
+
+@Serializable
+data class BulkUpdateDevicePreferencesSchema(
+    val deviceIds: List<String>
+)
+
+@Serializable
+data class BulkUpdateSocPreferencesSchema(
+    val socIds: List<String>
 )
 
 @Serializable
@@ -315,6 +434,17 @@ data class VerifyDeveloperRequest(
 data class VerifyListingRequest(
     val listingId: String,
     val notes: String? = null
+)
+
+@Serializable
+data class VerifyListingSchema(
+    val listingId: String,
+    val notes: String? = null
+)
+
+@Serializable
+data class RemoveVerificationSchema(
+    val verificationId: String
 )
 
 @Serializable

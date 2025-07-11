@@ -31,6 +31,22 @@ data class ValidateTokenResponse(
 )
 
 @Serializable
+data class AuthResponse(
+    val success: Boolean,
+    val user: MobileUser? = null,
+    val token: String? = null,
+    val refreshToken: String? = null,
+    val message: String? = null
+)
+
+@Serializable
+data class OAuthResponse(
+    val authorizationUrl: String? = null,
+    val success: Boolean = false,
+    val message: String? = null
+)
+
+@Serializable
 data class UserVoteResponse(
     val vote: Boolean? = null
 )
