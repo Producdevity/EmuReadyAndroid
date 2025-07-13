@@ -25,7 +25,7 @@ val bottomNavItems = listOf(
     BottomNavItem(
         name = "Listings",
         route = Screen.Listings.route,
-        icon = Icons.Default.ShoppingCart
+        icon = Icons.Default.Build
     ),
     BottomNavItem(
         name = "Profile",

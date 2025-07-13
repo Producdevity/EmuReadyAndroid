@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 interface GameRepository {
     fun getGames(
         search: String? = null,
-        sortBy: SortOption = SortOption.POPULARITY,
+        sortBy: SortOption = SortOption.DEFAULT,
         systemIds: Set<String> = emptySet(),
         deviceIds: Set<String> = emptySet(),
         emulatorIds: Set<String> = emptySet(),
@@ -45,7 +45,7 @@ interface GameRepository {
 
     fun getGamesFromFilteredListings(
         search: String? = null,
-        sortBy: SortOption = SortOption.POPULARITY,
+        sortBy: SortOption = SortOption.DEFAULT,
         systemIds: Set<String> = emptySet(),
         deviceIds: Set<String> = emptySet(),
         emulatorIds: Set<String> = emptySet(),

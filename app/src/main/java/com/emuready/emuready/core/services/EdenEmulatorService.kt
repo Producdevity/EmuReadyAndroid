@@ -25,9 +25,14 @@ class EdenEmulatorService @Inject constructor(
 
     suspend fun isEdenInstalled(): Boolean = withContext(Dispatchers.IO) {
         try {
-            context.packageManager.getPackageInfo(EDEN_PACKAGE, 0)
+            context.packageManager.getPackageInfo(EDEN_PACKAGE, PackageManager.GET_ACTIVITIES)
+            android.util.Log.d("EdenEmulatorService", "Eden emulator found: $EDEN_PACKAGE")
             true
         } catch (e: PackageManager.NameNotFoundException) {
+            android.util.Log.e("EdenEmulatorService", "Eden emulator not found: $EDEN_PACKAGE", e)
+            false
+        } catch (e: Exception) {
+            android.util.Log.e("EdenEmulatorService", "Error checking Eden emulator: ${e.message}", e)
             false
         }
     }
@@ -72,25 +77,60 @@ class EdenEmulatorService @Inject constructor(
         titleId: String,
         presetName: String
     ): Result<Unit> {
-        val configuration = when (presetName) {
-            "Known Working Config" -> EmulatorPresets.KNOWN_WORKING_CONFIG
-            "High Performance" -> EmulatorPresets.HIGH_PERFORMANCE
-            "Battery Optimized" -> EmulatorPresets.BATTERY_OPTIMIZED
-            "Balanced" -> EmulatorPresets.BALANCED
-            else -> return Result.failure(
+        return when (presetName) {
+            "No Config" -> launchGameWithoutConfig(titleId)
+            "Known Working Config" -> launchGame(titleId, EmulatorPresets.KNOWN_WORKING_CONFIG)
+            "High Performance" -> launchGame(titleId, EmulatorPresets.HIGH_PERFORMANCE)
+            "Battery Optimized" -> launchGame(titleId, EmulatorPresets.BATTERY_OPTIMIZED)
+            "Balanced" -> launchGame(titleId, EmulatorPresets.BALANCED)
+            else -> Result.failure(
                 EmulatorException("Unknown preset: $presetName")
             )
         }
-
-        return launchGame(titleId, configuration)
     }
 
     suspend fun getAvailablePresets(): List<String> {
         return listOf(
+            "No Config",
             "Known Working Config",
             "High Performance",
             "Battery Optimized",
             "Balanced"
         )
+    }
+
+    suspend fun launchGameWithoutConfig(
+        titleId: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            if (!isEdenInstalled()) {
+                return@withContext Result.failure(
+                    EmulatorException("Eden emulator is not installed")
+                )
+            }
+
+            val intent = Intent().apply {
+                action = EDEN_LAUNCH_ACTION
+                setPackage(EDEN_PACKAGE)
+                setClassName(EDEN_PACKAGE, EMULATION_ACTIVITY)
+                putExtra("title_id", titleId)
+                // No custom_settings for "No Config" option
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            // Verify intent can be resolved
+            val resolveInfo = context.packageManager.resolveActivity(intent, 0)
+            if (resolveInfo == null) {
+                return@withContext Result.failure(
+                    EmulatorException("Eden emulator is not available")
+                )
+            }
+
+            context.startActivity(intent)
+            Result.success(Unit)
+
+        } catch (e: Exception) {
+            Result.failure(EmulatorException("Failed to launch Eden emulator", e))
+        }
     }
 }

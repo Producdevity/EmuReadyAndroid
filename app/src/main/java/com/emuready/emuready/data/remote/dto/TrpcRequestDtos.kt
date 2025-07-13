@@ -1,10 +1,12 @@
 package com.emuready.emuready.data.remote.dto
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.ExperimentalSerializationApi
 
 /**
  * All tRPC Request DTOs as specified in the API documentation
  */
+@OptIn(ExperimentalSerializationApi::class)
 
 // Put everything in TrpcRequestDtos object to avoid conflicts
 object TrpcRequestDtos {
@@ -136,9 +138,9 @@ data class GetListingsSchema(
 
 @Serializable
 data class GetGamesSchema(
-    val offset: Int? = 0,
-    val limit: Int? = 12,
-    val hideGamesWithNoListings: Boolean? = false,
+    val offset: Int = 0,
+    val limit: Int = 12,
+    val hideGamesWithNoListings: Boolean = false,
     val search: String? = null,
     val systemId: String? = null
 )
@@ -580,5 +582,12 @@ data class GetUserByIdSchema(
     val votesLimit: Int? = 12,
     val votesSearch: String? = null
 )
+
+// ========================================
+// ADDITIONAL REQUEST DTOS
+// ========================================
+
+// Additional request DTOs that reuse existing schemas
+// Note: Using explicit data classes instead of typealiases to avoid compilation issues
 
 } // End of TrpcRequestDtos object

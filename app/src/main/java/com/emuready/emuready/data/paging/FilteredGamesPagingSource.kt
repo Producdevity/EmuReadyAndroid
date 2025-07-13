@@ -4,7 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.domain.entities.Game
 import com.emuready.emuready.presentation.viewmodels.SortOption
@@ -13,7 +13,6 @@ import kotlinx.serialization.json.Json
 
 class FilteredGamesPagingSource(
     private val trpcApiService: EmuReadyTrpcApiService,
-    private val requestBuilder: TrpcRequestBuilder,
     private val search: String?,
     private val sortBy: SortOption,
     private val systemIds: Set<String>,
@@ -22,32 +21,25 @@ class FilteredGamesPagingSource(
     private val performanceIds: Set<String>
 ) : PagingSource<Int, Game>() {
 
-    private inline fun <reified T> createQueryParam(data: T): String {
-        return requestBuilder.buildQueryParam(Json.encodeToString(data))
-    }
-
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Game> {
         return try {
             val offset = params.key ?: 0
             val pageSize = params.loadSize
             
             // Build the request parameters for games.get endpoint
+            // API limits: limit max 50, search/systemId can be null (omitted from JSON)
             val requestData = TrpcRequestDtos.GetGamesSchema(
                 offset = offset,
-                limit = pageSize,
-                search = search,
-                systemId = systemIds.firstOrNull(),
+                limit = minOf(pageSize, 50), // API max limit is 50
+                search = search?.takeIf { it.isNotBlank() },
+                systemId = systemIds.firstOrNull()?.takeIf { it.isNotBlank() },
                 hideGamesWithNoListings = false
             )
             
             // Make tRPC request
-            val queryParam = createQueryParam(requestData)
-            val responseWrapper = trpcApiService.getGames(
-                search = search,
-                systemId = systemIds.firstOrNull(),
-                limit = params.loadSize
-            )
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(requestData)
+            val responseWrapper = trpcApiService.getGames(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 LoadResult.Error(Exception(response.error.message))

@@ -4,7 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
 import com.emuready.emuready.domain.entities.Listing
@@ -15,15 +15,10 @@ import kotlinx.serialization.json.Json
 
 class ListingsPagingSource(
     private val trpcApiService: EmuReadyTrpcApiService,
-    private val requestBuilder: TrpcRequestBuilder,
     private val gameId: String? = null,
     private val deviceId: String? = null,
     private val emulatorId: String? = null
 ) : PagingSource<Int, Listing>() {
-
-    private inline fun <reified T> createQueryParam(data: T): String {
-        return requestBuilder.buildQueryParam(Json.encodeToString(data))
-    }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Listing> {
         return withContext(Dispatchers.IO) {
@@ -32,20 +27,20 @@ class ListingsPagingSource(
                 
                 val listings = if (gameId != null) {
                     // Use getListingsByGame for game-specific listings
-                    val queryParam = createQueryParam(TrpcRequestDtos.GameIdRequest(gameId = gameId))
-                    val responseWrapper = trpcApiService.getListingsByGame(gameId = gameId)
-                    val response = responseWrapper.`0`
+                    val input = TrpcInputHelper.createInput(TrpcRequestDtos.GameIdRequest(gameId = gameId))
+                    val responseWrapper = trpcApiService.getListingsByGame(input = input)
+                    val response = responseWrapper
                     
                     if (response.error != null) {
                         return@withContext LoadResult.Error(Exception(response.error.message))
                     }
                     
-                    @Suppress("UNCHECKED_CAST")
-                    val listingsData = response.result as? List<TrpcResponseDtos.MobileListing>
+                    // getListingsByGame returns a list directly
+                    val listingsData = response.result?.data
                     listingsData?.map { it.toDomain() } ?: emptyList()
                 } else {
                     // Use getListings for general listings
-                    val queryParam = createQueryParam(
+                    val input = TrpcInputHelper.createInput(
                         TrpcRequestDtos.GetListingsSchema(
                             offset = offset,
                             limit = params.loadSize,
@@ -53,22 +48,15 @@ class ListingsPagingSource(
                             emulatorId = emulatorId
                         )
                     )
-                    val responseWrapper = trpcApiService.getListings(
-                        page = (offset / params.loadSize) + 1,
-                        limit = params.loadSize,
-                        gameId = null,
-                        systemId = null,
-                        deviceId = deviceId,
-                        emulatorId = emulatorId,
-                        search = null
-                    )
-                    val response = responseWrapper.`0`
+                    val responseWrapper = trpcApiService.getListings(input = input)
+                    val response = responseWrapper
                     
                     if (response.error != null) {
                         return@withContext LoadResult.Error(Exception(response.error.message))
                     }
                     
-                    val listingsResponse = response.result as? TrpcResponseDtos.MobileListingsResponse
+                    // getListings returns MobileListingsResponse
+                    val listingsResponse = response.result?.data
                     listingsResponse?.listings?.map { it.toDomain() } ?: emptyList()
                 }
                 

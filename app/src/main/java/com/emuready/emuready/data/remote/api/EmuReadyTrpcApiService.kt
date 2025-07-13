@@ -27,7 +27,7 @@ interface EmuReadyTrpcApiService {
     suspend fun oauthSignIn(@Body request: TrpcRequest<TrpcRequestDtos.MobileOAuthSignInRequest>): TrpcResponseWrapper<TrpcResponseDtos.OAuthResponse>
     
     @GET("auth.validateToken")
-    suspend fun validateToken(@Query("token") token: String): TrpcResponseWrapper<TrpcResponseDtos.ValidateTokenResponse>
+    suspend fun validateToken(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.ValidateTokenResponse>
     
     @POST("auth.refreshToken")
     suspend fun refreshToken(@Body request: TrpcRequest<TrpcRequestDtos.RefreshTokenRequest>): TrpcResponseWrapper<TrpcResponseDtos.AuthResponse>
@@ -58,33 +58,19 @@ interface EmuReadyTrpcApiService {
     // ========================================
     
     @GET("listings.getListings")
-    suspend fun getListings(
-        @Query("page") page: Int? = null,
-        @Query("limit") limit: Int? = null,
-        @Query("gameId") gameId: String? = null,
-        @Query("systemId") systemId: String? = null,
-        @Query("deviceId") deviceId: String? = null,
-        @Query("emulatorId") emulatorId: String? = null,
-        @Query("search") search: String? = null
-    ): TrpcResponseWrapper<TrpcResponseDtos.MobileListingsResponse>
+    suspend fun getListings(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileListingsResponse>
     
     @GET("listings.getFeaturedListings")
     suspend fun getFeaturedListings(): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
     
     @GET("listings.getListingsByGame")
-    suspend fun getListingsByGame(
-        @Query("gameId") gameId: String
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
+    suspend fun getListingsByGame(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
     
     @GET("listings.getListingById")
-    suspend fun getListingById(
-        @Query("id") id: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.MobileListing>
+    suspend fun getListingById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileListing>
     
     @GET("listings.getUserListings")
-    suspend fun getUserListings(
-        @Query("userId") userId: String
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
+    suspend fun getUserListings(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileListing>>
     
     @POST("listings.createListing")
     suspend fun createListing(@Body request: TrpcRequest<TrpcRequestDtos.CreateListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobileListing>
@@ -99,14 +85,14 @@ interface EmuReadyTrpcApiService {
     suspend fun voteListing(@Body request: TrpcRequest<TrpcRequestDtos.VoteListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
     @GET("listings.getUserVote")
-    suspend fun getUserVote(@Query("listingId") listingId: String): TrpcResponseWrapper<TrpcResponseDtos.UserVoteResponse>
+    suspend fun getUserVote(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.UserVoteResponse>
     
     // ========================================
     // 3. COMMENTS ENDPOINTS  
     // ========================================
     
     @GET("listings.getListingComments")
-    suspend fun getListingComments(@Query("listingId") listingId: String): TrpcResponseWrapper<TrpcResponseDtos.MobileCommentsResponse>
+    suspend fun getListingComments(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileCommentsResponse>
     
     @POST("listings.createComment")
     suspend fun createComment(@Body request: TrpcRequest<TrpcRequestDtos.CreateCommentSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobileComment>
@@ -122,17 +108,7 @@ interface EmuReadyTrpcApiService {
     // ========================================
     
     @GET("pcListings.getPcListings")
-    suspend fun getPcListings(
-        @Query("page") page: Int? = null,
-        @Query("limit") limit: Int? = null,
-        @Query("gameId") gameId: String? = null,
-        @Query("systemId") systemId: String? = null,
-        @Query("cpuId") cpuId: String? = null,
-        @Query("gpuId") gpuId: String? = null,
-        @Query("emulatorId") emulatorId: String? = null,
-        @Query("os") os: String? = null,
-        @Query("search") search: String? = null
-    ): TrpcResponseWrapper<TrpcResponseDtos.MobilePcListingsResponse>
+    suspend fun getPcListings(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobilePcListingsResponse>
     
     @POST("pcListings.createPcListing")
     suspend fun createPcListing(@Body request: TrpcRequest<TrpcRequestDtos.CreatePcListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcListing>
@@ -141,27 +117,17 @@ interface EmuReadyTrpcApiService {
     suspend fun updatePcListing(@Body request: TrpcRequest<TrpcRequestDtos.UpdatePcListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcListing>
     
     @GET("pcListings.getCpus")
-    suspend fun getCpus(
-        @Query("search") search: String? = null,
-        @Query("brandId") brandId: String? = null,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileCpu>>
+    suspend fun getCpus(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileCpu>>
     
     @GET("pcListings.getGpus")
-    suspend fun getGpus(
-        @Query("search") search: String? = null,
-        @Query("brandId") brandId: String? = null,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileGpu>>
+    suspend fun getGpus(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileGpu>>
     
     // ========================================
     // 5. PC PRESETS ENDPOINTS
     // ========================================
     
     @GET("pcListings.get")
-    suspend fun getPcPresets(
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobilePcPreset>>
+    suspend fun getPcPresets(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobilePcPreset>>
     
     @POST("pcListings.create")
     suspend fun createPcPreset(@Body request: TrpcRequest<TrpcRequestDtos.CreatePcPresetSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobilePcPreset>
@@ -177,35 +143,23 @@ interface EmuReadyTrpcApiService {
     // ========================================
     
     @GET("games.getGames")
-    suspend fun getGames(
-        @Query("search") search: String? = null,
-        @Query("systemId") systemId: String? = null,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
+    suspend fun getGames(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
     
     @GET("games.getPopularGames")
     suspend fun getPopularGames(): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
     
     @GET("games.searchGames")
-    suspend fun searchGames(
-        @Query("query") query: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
+    suspend fun searchGames(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.TrpcPaginatedGamesResponse>
     
     @GET("games.getGameById")
-    suspend fun getGameById(
-        @Query("id") id: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.MobileGame>
+    suspend fun getGameById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.TrpcSingleGameResponse>
     
     // ========================================
     // 7. DEVICES ENDPOINTS
     // ========================================
     
     @GET("devices.getDevices")
-    suspend fun getDevices(
-        @Query("search") search: String? = null,
-        @Query("brandId") brandId: String? = null,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileDevice>>
+    suspend fun getDevices(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileDevice>>
     
     @GET("devices.getDeviceBrands")
     suspend fun getDeviceBrands(): TrpcResponseWrapper<List<TrpcResponseDtos.MobileBrand>>
@@ -218,23 +172,17 @@ interface EmuReadyTrpcApiService {
     // ========================================
     
     @GET("emulators.getEmulators")
-    suspend fun getEmulators(
-        @Query("systemId") systemId: String? = null,
-        @Query("search") search: String? = null,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileEmulator>>
+    suspend fun getEmulators(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileEmulator>>
     
     @GET("emulators.getEmulatorById")
-    suspend fun getEmulatorById(
-        @Query("id") id: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.MobileEmulator>
+    suspend fun getEmulatorById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileEmulator>
     
     // ========================================
     // 9. GENERAL DATA ENDPOINTS
     // ========================================
     
     @GET("general.getAppStats")
-    suspend fun getAppStats(): TrpcResponseWrapper<TrpcResponseDtos.MobileStats>
+    suspend fun getAppStats(): TrpcResponseWrapper<TrpcResponseDtos.TrpcStatsResponse>
     
     @GET("general.getSystems")
     suspend fun getSystems(): TrpcResponseWrapper<List<TrpcResponseDtos.MobileSystem>>
@@ -243,10 +191,7 @@ interface EmuReadyTrpcApiService {
     suspend fun getPerformanceScales(): TrpcResponseWrapper<List<TrpcResponseDtos.MobilePerformance>>
     
     @GET("general.getSearchSuggestions")
-    suspend fun getSearchSuggestions(
-        @Query("query") query: String,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileSearchSuggestion>>
+    suspend fun getSearchSuggestions(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileSearchSuggestion>>
     
     
     // ========================================
@@ -254,13 +199,9 @@ interface EmuReadyTrpcApiService {
     // ========================================
     
     @GET("notifications.getNotifications")
-    suspend fun getNotifications(
-        @Query("page") page: Int? = null,
-        @Query("limit") limit: Int? = null,
-        @Query("unreadOnly") unreadOnly: Boolean? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileNotification>>
+    suspend fun getNotifications(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileNotification>>
     
-    @GET("notifications.getUnreadNotificationCount")
+    @POST("notifications.getUnreadNotificationCount")
     suspend fun getUnreadNotificationCount(): TrpcResponseWrapper<TrpcResponseDtos.CountResponse>
     
     @POST("notifications.markNotificationAsRead")
@@ -273,7 +214,7 @@ interface EmuReadyTrpcApiService {
     // 11. USER PREFERENCES ENDPOINTS
     // ========================================
     
-    @GET("preferences.getUserPreferences")
+    @POST("preferences.getUserPreferences")
     suspend fun getUserPreferences(): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
     
     @POST("preferences.updateUserPreferences")
@@ -292,9 +233,7 @@ interface EmuReadyTrpcApiService {
     suspend fun bulkUpdateSocPreferences(@Body request: TrpcRequest<TrpcRequestDtos.BulkUpdateSocPreferencesSchema>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
     @GET("preferences.getUserProfile")
-    suspend fun getUserProfile(
-        @Query("userId") userId: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
+    suspend fun getUserProfile(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
     
     @POST("preferences.updateProfile")
     suspend fun updateUserProfile(@Body request: TrpcRequest<TrpcRequestDtos.UpdateProfileSchema>): TrpcResponseWrapper<TrpcResponseDtos.MobileUserProfile>
@@ -303,14 +242,11 @@ interface EmuReadyTrpcApiService {
     // 12. DEVELOPER VERIFICATION ENDPOINTS
     // ========================================
     
-    @GET("developers.getMyVerifiedEmulators")
+    @POST("developers.getMyVerifiedEmulators")
     suspend fun getMyVerifiedEmulators(): TrpcResponseWrapper<List<TrpcResponseDtos.MobileEmulatorVerification>>
     
     @GET("developers.isVerifiedDeveloper")
-    suspend fun isVerifiedDeveloper(
-        @Query("userId") userId: String,
-        @Query("emulatorId") emulatorId: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.VerifyDeveloperResponse>
+    suspend fun isVerifiedDeveloper(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.VerifyDeveloperResponse>
     
     @POST("developers.verifyListing")
     suspend fun verifyListing(@Body request: TrpcRequest<TrpcRequestDtos.VerifyListingSchema>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
@@ -319,37 +255,32 @@ interface EmuReadyTrpcApiService {
     suspend fun removeVerification(@Body request: TrpcRequest<TrpcRequestDtos.RemoveVerificationSchema>): TrpcResponseWrapper<TrpcResponseDtos.SuccessResponse>
     
     @GET("developers.getListingVerifications")
-    suspend fun getListingVerifications(
-        @Query("listingId") listingId: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.MobileListingVerificationsResponse>
+    suspend fun getListingVerifications(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileListingVerificationsResponse>
     
     @GET("developers.getMyVerifications")
-    suspend fun getMyVerifications(
-        @Query("limit") limit: Int? = null,
-        @Query("page") page: Int? = null
-    ): TrpcResponseWrapper<List<TrpcResponseDtos.MobileVerification>>
+    suspend fun getMyVerifications(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileVerification>>
     
     // ========================================
     // 13. CONTENT REPORTING ENDPOINTS
     // ========================================
     
     @POST("listingReports.create")
-    suspend fun createListingReport(@Body request: TrpcRequest<TrpcRequestDtos.CreateListingReportSchema>): TrpcResponseWrapper<TrpcResponseDtos.ListingReportResponse>
+    suspend fun createListingReport(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.ListingReportResponse>
     
     @GET("listingReports.checkUserHasReports")
-    suspend fun checkUserHasReports(@Query("userId") userId: String): TrpcResponseWrapper<TrpcResponseDtos.UserReportsInfo>
+    suspend fun checkUserHasReports(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.UserReportsInfo>
     
     // ========================================
     // 14. TRUST SYSTEM ENDPOINTS
     // ========================================
     
-    @GET("trust.getMyTrustInfo")
+    @POST("trust.getMyTrustInfo")
     suspend fun getMyTrustInfo(): TrpcResponseWrapper<TrpcResponseDtos.TrustInfo>
     
     @GET("trust.getUserTrustInfo")
-    suspend fun getUserTrustInfo(@Query("userId") userId: String): TrpcResponseWrapper<TrpcResponseDtos.TrustInfo>
+    suspend fun getUserTrustInfo(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.TrustInfo>
     
-    @GET("trust.getTrustLevels")
+    @POST("trust.getTrustLevels")
     suspend fun getTrustLevels(): TrpcResponseWrapper<List<TrpcResponseDtos.MobileTrustLevel>>
     
     // ========================================
@@ -357,7 +288,7 @@ interface EmuReadyTrpcApiService {
     // ========================================
     
     @GET("customFieldDefinitions.getByEmulator")
-    suspend fun getCustomFieldsByEmulator(@Query("emulatorId") emulatorId: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileCustomFieldDefinition>>
+    suspend fun getCustomFieldsByEmulator(@Query("input") input: String): TrpcResponseWrapper<List<TrpcResponseDtos.MobileCustomFieldDefinition>>
     
     // ========================================
     // 16. HARDWARE DATA ENDPOINTS
@@ -365,72 +296,60 @@ interface EmuReadyTrpcApiService {
     
     // CPUs
     @GET("cpus.get")
-    suspend fun getCpusEnhanced(
-        @Query("search") search: String? = null,
-        @Query("brandId") brandId: String? = null,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileCpu>>
+    suspend fun getCpusEnhanced(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileCpu>>
     
     @GET("cpus.getById")
-    suspend fun getCpuById(@Query("id") id: String): TrpcResponseWrapper<TrpcResponseDtos.MobileCpu>
+    suspend fun getCpuById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileCpu>
     
     // GPUs
     @GET("gpus.get")
-    suspend fun getGpusEnhanced(
-        @Query("search") search: String? = null,
-        @Query("brandId") brandId: String? = null,
-        @Query("limit") limit: Int? = null
-    ): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileGpu>>
+    suspend fun getGpusEnhanced(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileGpu>>
     
     @GET("gpus.getById")
-    suspend fun getGpuById(@Query("id") id: String): TrpcResponseWrapper<TrpcResponseDtos.MobileGpu>
+    suspend fun getGpuById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileGpu>
     
     // SoCs
-    @GET("socs.get")
+    @POST("socs.get")
     suspend fun getSocsEnhanced(): TrpcResponseWrapper<TrpcResponseDtos.HardwarePaginationResponse<TrpcResponseDtos.MobileSoc>>
     
     @GET("socs.getById")
-    suspend fun getSocById(@Query("id") id: String): TrpcResponseWrapper<TrpcResponseDtos.MobileSoc>
+    suspend fun getSocById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileSoc>
     
     // Device Brands
-    @GET("deviceBrands.get")
+    @POST("deviceBrands.get")
     suspend fun getDeviceBrandsEnhanced(): TrpcResponseWrapper<List<TrpcResponseDtos.MobileDeviceBrand>>
     
     @GET("deviceBrands.getById")
-    suspend fun getDeviceBrandById(@Query("id") id: String): TrpcResponseWrapper<TrpcResponseDtos.MobileDeviceBrand>
+    suspend fun getDeviceBrandById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.MobileDeviceBrand>
     
     // ========================================
     // 17. EXTERNAL GAME DATA ENDPOINTS
     // ========================================
     
     // RAWG Integration
-    @GET("rawg.searchGameImages")
-    suspend fun searchRawgGameImages(@Query("gameIds") gameIds: List<String>): TrpcResponseWrapper<Map<String, List<TrpcResponseDtos.GameImageOption>>>
+    @POST("rawg.searchGameImages")
+    suspend fun searchRawgGameImages(): TrpcResponseWrapper<Map<String, List<TrpcResponseDtos.GameImageOption>>>
     
     @GET("rawg.searchGames")
-    suspend fun searchRawgGames(
-        @Query("query") query: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.RawgGameResponse>
+    suspend fun searchRawgGames(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.RawgGameResponse>
     
-    @GET("rawg.getGameImages")
-    suspend fun getRawgGameImages(@Query("gameId") gameId: String): TrpcResponseWrapper<List<TrpcResponseDtos.GameImageOption>>
+    @POST("rawg.getGameImages")
+    suspend fun getRawgGameImages(): TrpcResponseWrapper<List<TrpcResponseDtos.GameImageOption>>
     
     // TGDB Integration
-    @GET("tgdb.searchGameImages")
-    suspend fun searchTgdbGameImages(@Query("gameIds") gameIds: List<String>): TrpcResponseWrapper<Map<String, List<TrpcResponseDtos.GameImageOption>>>
+    @POST("tgdb.searchGameImages")
+    suspend fun searchTgdbGameImages(): TrpcResponseWrapper<Map<String, List<TrpcResponseDtos.GameImageOption>>>
     
     @GET("tgdb.searchGames")
-    suspend fun searchTgdbGames(
-        @Query("query") query: String
-    ): TrpcResponseWrapper<TrpcResponseDtos.TgdbGameResponse>
+    suspend fun searchTgdbGames(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.TgdbGameResponse>
     
-    @GET("tgdb.getGameImageUrls")
-    suspend fun getTgdbGameImageUrls(@Query("gameId") gameId: String): TrpcResponseWrapper<TrpcResponseDtos.GameImageUrls>
+    @POST("tgdb.getGameImageUrls")
+    suspend fun getTgdbGameImageUrls(): TrpcResponseWrapper<TrpcResponseDtos.GameImageUrls>
     
-    @GET("tgdb.getGameImages")
-    suspend fun getTgdbGameImages(@Query("gameIds") gameIds: List<String>): TrpcResponseWrapper<Any>
+    @POST("tgdb.getGameImages")
+    suspend fun getTgdbGameImages(): TrpcResponseWrapper<Any>
     
-    @GET("tgdb.getPlatforms")
+    @POST("tgdb.getPlatforms")
     suspend fun getTgdbPlatforms(): TrpcResponseWrapper<List<TrpcResponseDtos.TgdbPlatform>>
     
     // ========================================
@@ -438,5 +357,5 @@ interface EmuReadyTrpcApiService {
     // ========================================
     
     @GET("users.getUserById")
-    suspend fun getUserById(@Query("userId") userId: String): TrpcResponseWrapper<TrpcResponseDtos.EnhancedMobileUserProfile>
+    suspend fun getUserById(@Query("input") input: String): TrpcResponseWrapper<TrpcResponseDtos.EnhancedMobileUserProfile>
 }

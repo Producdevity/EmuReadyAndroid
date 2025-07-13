@@ -18,7 +18,7 @@ class GetGamesUseCase @Inject constructor(
 ) {
     operator fun invoke(
         search: String? = null,
-        sortBy: SortOption = SortOption.POPULARITY,
+        sortBy: SortOption = SortOption.DEFAULT,
         systemIds: Set<String> = emptySet(),
         deviceIds: Set<String> = emptySet(),
         emulatorIds: Set<String> = emptySet(),
@@ -96,7 +96,7 @@ class GetFilteredGamesUseCase @Inject constructor(
 ) {
     operator fun invoke(
         search: String? = null,
-        sortBy: SortOption = SortOption.POPULARITY,
+        sortBy: SortOption = SortOption.DEFAULT,
         systemIds: Set<String> = emptySet(),
         deviceIds: Set<String> = emptySet(),
         emulatorIds: Set<String> = emptySet(),

@@ -25,7 +25,7 @@ class BrowseViewModel @Inject constructor(
     val uiState: StateFlow<BrowseUiState> = _uiState.asStateFlow()
 
     private val searchQuery = MutableStateFlow("")
-    private val sortOption = MutableStateFlow(SortOption.POPULARITY)
+    private val sortOption = MutableStateFlow(SortOption.DEFAULT)
     private val activeFilters = MutableStateFlow<Map<FilterType, Set<String>>>(emptyMap())
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -48,7 +48,7 @@ class BrowseViewModel @Inject constructor(
 
     init {
         loadAvailableFilters()
-        
+
         // Update UI state when search/sort/filters change
         viewModelScope.launch {
             combine(
@@ -79,19 +79,19 @@ class BrowseViewModel @Inject constructor(
     fun toggleFilter(filterType: FilterType, optionId: String) {
         val currentFilters = activeFilters.value.toMutableMap()
         val typeFilters = currentFilters[filterType]?.toMutableSet() ?: mutableSetOf()
-        
+
         if (optionId in typeFilters) {
             typeFilters.remove(optionId)
         } else {
             typeFilters.add(optionId)
         }
-        
+
         if (typeFilters.isEmpty()) {
             currentFilters.remove(filterType)
         } else {
             currentFilters[filterType] = typeFilters
         }
-        
+
         activeFilters.value = currentFilters
     }
 
@@ -107,7 +107,7 @@ class BrowseViewModel @Inject constructor(
                     state.copy(availableFilters = filters)
                 }
             } catch (e: Exception) {
-                // Handle error - could show a snackbar or log
+                // TODO: Handle error - could show a snackbar or log
             }
         }
     }
@@ -115,17 +115,15 @@ class BrowseViewModel @Inject constructor(
 
 data class BrowseUiState(
     val searchQuery: String = "",
-    val sortOption: SortOption = SortOption.POPULARITY,
+    val sortOption: SortOption = SortOption.DEFAULT,
     val activeFilters: Map<FilterType, Set<String>> = emptyMap(),
     val availableFilters: Map<FilterType, List<FilterOption>> = emptyMap()
 )
 
 enum class SortOption(val displayName: String) {
-    POPULARITY("Most Popular"),
+    DEFAULT("Default"),
     ALPHABETICAL("A-Z"),
-    RATING("Highest Rated"),
-    DATE_ADDED("Recently Added"),
-    LISTING_COUNT("Most Listings")
+    RECENT("Recently Added")
 }
 
 enum class FilterType(val displayName: String) {

@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.services.EdenIntegration
@@ -25,12 +25,12 @@ class EmulatorRepositoryImpl @Inject constructor(
     private val trpcApiService: EmuReadyTrpcApiService
 ) : EmulatorRepository {
     
-    private val requestBuilder = TrpcRequestBuilder()
     
     override suspend fun getEmulators(systemId: String?, search: String?): Result<List<Emulator>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getEmulators(systemId = systemId, search = search, limit = null)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.GetEmulatorsSchema(systemId = systemId?.takeIf { it.isNotBlank() }, search = search?.takeIf { it.isNotBlank() }))
+            val responseWrapper = trpcApiService.getEmulators(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -47,8 +47,9 @@ class EmulatorRepositoryImpl @Inject constructor(
     
     override suspend fun getEmulatorById(emulatorId: String): Result<Emulator> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getEmulatorById(id = emulatorId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.IdRequest(id = emulatorId))
+            val responseWrapper = trpcApiService.getEmulatorById(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -65,8 +66,9 @@ class EmulatorRepositoryImpl @Inject constructor(
     
     override suspend fun getCustomFields(emulatorId: String): Result<List<CustomFieldDefinition>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getCustomFieldsByEmulator(emulatorId = emulatorId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.EmulatorIdRequest(emulatorId = emulatorId))
+            val responseWrapper = trpcApiService.getCustomFieldsByEmulator(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -83,8 +85,9 @@ class EmulatorRepositoryImpl @Inject constructor(
     
     override suspend fun getPopularEmulators(limit: Int): Result<List<Emulator>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getEmulators(systemId = null, search = null, limit = limit)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.GetEmulatorsSchema(limit = limit))
+            val responseWrapper = trpcApiService.getEmulators(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -103,8 +106,9 @@ class EmulatorRepositoryImpl @Inject constructor(
     
     override suspend fun getPresets(emulatorId: String): Result<List<EmulatorPreset>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getPcPresets(limit = 50)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.LimitRequest(limit = 50))
+            val responseWrapper = trpcApiService.getPcPresets(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -182,8 +186,11 @@ class EmulatorRepositoryImpl @Inject constructor(
     
     override suspend fun deletePreset(presetId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.deletePcPreset(TrpcRequestBuilder().buildRequest(TrpcRequestDtos.DeletePcPresetSchema(id = presetId)))
-            val response = responseWrapper.`0`
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(TrpcRequestDtos.DeletePcPresetSchema(id = presetId))
+            )
+            val responseWrapper = trpcApiService.deletePcPreset(request)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -198,7 +205,7 @@ class EmulatorRepositoryImpl @Inject constructor(
     override suspend fun getSupportedSystems(): Result<List<System>> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getSystems()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -263,8 +270,9 @@ class EmulatorRepositoryImpl @Inject constructor(
     
     override suspend fun isDeveloperVerified(emulatorId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.isVerifiedDeveloper(userId = "", emulatorId = emulatorId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.EmulatorIdRequest(emulatorId = emulatorId))
+            val responseWrapper = trpcApiService.isVerifiedDeveloper(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -280,8 +288,11 @@ class EmulatorRepositoryImpl @Inject constructor(
     
     override suspend fun verifyListing(listingId: String, notes: String?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.verifyListing(TrpcRequestBuilder().buildRequest(TrpcRequestDtos.VerifyListingSchema(listingId = listingId, notes = notes)))
-            val response = responseWrapper.`0`
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(TrpcRequestDtos.VerifyListingSchema(listingId = listingId, notes = notes))
+            )
+            val responseWrapper = trpcApiService.verifyListing(request)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -296,7 +307,7 @@ class EmulatorRepositoryImpl @Inject constructor(
     override suspend fun getVerifiedEmulators(): Result<List<Emulator>> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getMyVerifiedEmulators()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))

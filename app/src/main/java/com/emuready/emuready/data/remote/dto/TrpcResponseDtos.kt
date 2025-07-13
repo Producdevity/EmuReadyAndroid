@@ -1,10 +1,13 @@
 package com.emuready.emuready.data.remote.dto
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 
 /**
  * All tRPC Response DTOs as specified in the API documentation
  */
+@OptIn(ExperimentalSerializationApi::class, InternalSerializationApi::class)
 
 // Put everything in TrpcResponseDtos object to avoid conflicts
 object TrpcResponseDtos {
@@ -83,19 +86,22 @@ data class TrustInfo(
 @Serializable
 data class MobileListingsResponse(
     val listings: List<MobileListing>,
-    val pagination: PaginationInfo
+    val pagination: PaginationInfo,
+    val meta: TrpcMeta? = null
 )
 
 @Serializable
 data class MobilePcListingsResponse(
     val listings: List<MobilePcListing>,
-    val pagination: PaginationInfo
+    val pagination: PaginationInfo,
+    val meta: TrpcMeta? = null
 )
 
 @Serializable
 data class MobileCommentsResponse(
     val comments: List<MobileComment>,
-    val _count: CommentCount
+    val _count: CommentCount,
+    val meta: TrpcMeta? = null
 )
 
 @Serializable
@@ -106,7 +112,8 @@ data class CommentCount(
 @Serializable
 data class HardwarePaginationResponse<T>(
     val items: List<T>, // cpus, gpus, socs
-    val pagination: PaginationInfo
+    val pagination: PaginationInfo,
+    val meta: TrpcMeta? = null
 )
 
 @Serializable
@@ -185,9 +192,17 @@ data class ListingCount(
 data class MobileGame(
     val id: String,
     val title: String,
+    val systemId: String? = null, // API includes this field
     val imageUrl: String? = null,
     val boxartUrl: String? = null,
     val bannerUrl: String? = null,
+    val tgdbGameId: Int? = null, // API includes this field
+    val status: String? = null, // API includes this field
+    val submittedBy: String? = null, // API includes this field
+    val submittedAt: String? = null, // API includes this field
+    val approvedBy: String? = null, // API includes this field
+    val approvedAt: String? = null, // API includes this field
+    val createdAt: String? = null, // API includes this field
     val system: MobileSystem,
     val _count: GameCount
 )
@@ -469,7 +484,8 @@ data class EnhancedUserProfileCount(
 @Serializable
 data class UserProfilePagination(
     val listings: PaginationInfo,
-    val votes: PaginationInfo
+    val votes: PaginationInfo,
+    val meta: TrpcMeta? = null
 )
 
 // ========================================
@@ -557,9 +573,26 @@ enum class UserRole {
 // ========================================
 
 @Serializable
+data class TrpcMeta(
+    val values: Map<String, List<String>> = emptyMap()
+)
+
+@Serializable
 data class TrpcPaginatedGamesResponse(
     val json: List<MobileGame>,
-    val meta: Map<String, List<String>>? = null
+    val meta: TrpcMeta? = null
+)
+
+@Serializable
+data class TrpcSingleGameResponse(
+    val json: MobileGame,
+    val meta: TrpcMeta? = null
+)
+
+@Serializable
+data class TrpcStatsResponse(
+    val json: MobileStats,
+    val meta: TrpcMeta? = null
 )
 
 } // End of TrpcResponseDtos object

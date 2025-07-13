@@ -1,7 +1,7 @@
 package com.emuready.emuready.data.repositories
 
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
 import com.emuready.emuready.data.mappers.toDomain
@@ -22,12 +22,12 @@ class DeviceRepositoryImpl @Inject constructor(
     private val deviceManager: DeviceManager
 ) : DeviceRepository {
     
-    private val requestBuilder = TrpcRequestBuilder()
     
     override suspend fun getDevices(search: String?, brandId: String?): Result<List<Device>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getDevices(search = search, brandId = brandId, limit = null)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.SearchWithBrandRequest(search = search?.takeIf { it.isNotBlank() }, brandId = brandId?.takeIf { it.isNotBlank() }))
+            val responseWrapper = trpcApiService.getDevices(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -45,8 +45,9 @@ class DeviceRepositoryImpl @Inject constructor(
     override suspend fun getDeviceById(deviceId: String): Result<Device> = withContext(Dispatchers.IO) {
         try {
             // Note: API doesn't have specific getDeviceById, so we search by ID
-            val responseWrapper = trpcApiService.getDevices(search = deviceId, brandId = null, limit = null)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.SearchWithBrandRequest(search = deviceId.takeIf { it.isNotBlank() }, brandId = null))
+            val responseWrapper = trpcApiService.getDevices(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -68,7 +69,7 @@ class DeviceRepositoryImpl @Inject constructor(
     override suspend fun getDeviceBrands(): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getDeviceBrands()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -86,7 +87,7 @@ class DeviceRepositoryImpl @Inject constructor(
     override suspend fun getSoCs(search: String?): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getSocs()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -164,8 +165,9 @@ class DeviceRepositoryImpl @Inject constructor(
     
     override suspend fun getPopularDevices(limit: Int): Result<List<Device>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getDevices(search = null, brandId = null, limit = limit)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.LimitRequest(limit = limit))
+            val responseWrapper = trpcApiService.getDevices(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -190,8 +192,9 @@ class DeviceRepositoryImpl @Inject constructor(
         os: String?
     ): Result<List<Device>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getDevices(search = query, brandId = brand, limit = null)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.SearchWithBrandRequest(search = query.takeIf { it.isNotBlank() }, brandId = brand?.takeIf { it.isNotBlank() }))
+            val responseWrapper = trpcApiService.getDevices(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))

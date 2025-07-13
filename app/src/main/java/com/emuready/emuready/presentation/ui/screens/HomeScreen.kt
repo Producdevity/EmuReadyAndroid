@@ -113,9 +113,10 @@ fun HomeScreen(
                 )
             ) {
                 FeaturedGamesSection(
-                    games = uiState.featuredGames,
+                    uiState = uiState,
                     onGameClick = onNavigateToGame,
-                    onNavigateToBrowse = onNavigateToBrowse
+                    onNavigateToBrowse = onNavigateToBrowse,
+                    onRetry = { viewModel.retry() }
                 )
             }
         }
@@ -153,7 +154,7 @@ fun HomeScreen(
         
         // Bottom padding for navigation
         item {
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(96.dp))
         }
     }
 }
@@ -166,7 +167,7 @@ private fun HeroSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 16.dp)
             .padding(top = 32.dp)
     ) {
         Card(
@@ -201,7 +202,7 @@ private fun HeroSection(
                 )
                 
                 Column(
-                    modifier = Modifier.padding(28.dp),
+                    modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -212,7 +213,7 @@ private fun HeroSection(
                         textAlign = TextAlign.Center
                     )
                     
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
                         text = "Your premium companion for gaming handheld compatibility",
@@ -224,7 +225,7 @@ private fun HeroSection(
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         PremiumButton(
                             text = "Create Listing",
@@ -249,7 +250,7 @@ private fun HeroSection(
 @Composable
 private fun QuickActionsSection() {
     Column(
-        modifier = Modifier.padding(horizontal = 20.dp)
+        modifier = Modifier.padding(horizontal = 16.dp)
     ) {
         Text(
             text = "Quick Actions",
@@ -269,7 +270,7 @@ private fun QuickActionsSection() {
         
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
             itemsIndexed(quickActions) { index, (title, icon, color) ->
@@ -367,12 +368,13 @@ private fun QuickActionCard(
 
 @Composable
 private fun FeaturedGamesSection(
-    games: List<com.emuready.emuready.domain.entities.Game>,
+    uiState: HomeUiState,
     onGameClick: (String) -> Unit,
-    onNavigateToBrowse: () -> Unit
+    onNavigateToBrowse: () -> Unit,
+    onRetry: () -> Unit
 ) {
     Column(
-        modifier = Modifier.padding(horizontal = 20.dp)
+        modifier = Modifier.padding(horizontal = 16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -398,40 +400,78 @@ private fun FeaturedGamesSection(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        if (games.isNotEmpty()) {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp)
-            ) {
-                itemsIndexed(games.take(5)) { index, game ->
-                    var isVisible by remember { mutableStateOf(false) }
-                    
-                    LaunchedEffect(Unit) {
-                        delay(index * StaggerAnimations.ItemDelay)
-                        isVisible = true
-                    }
-                    
-                    AnimatedVisibility(
-                        visible = isVisible,
-                        enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + slideInHorizontally(
-                            animationSpec = tween(AnimationDurations.NORMAL, easing = EasingCurves.iOSEaseOut),
-                            initialOffsetX = { it / 2 }
-                        )
-                    ) {
-                        EnhancedGameCard(
-                            game = game,
-                            onClick = { onGameClick(game.id) },
-                            modifier = Modifier.width(280.dp)
-                        )
+        when {
+            uiState.error != null -> {
+                // Error State
+                ErrorStateCard(
+                    title = "Failed to Load Games",
+                    description = uiState.error,
+                    onRetry = onRetry
+                )
+            }
+            uiState.featuredGames.isNotEmpty() -> {
+                // Success State - Show real games
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    itemsIndexed(uiState.featuredGames.take(5)) { index, game ->
+                        var isVisible by remember { mutableStateOf(false) }
+                        
+                        LaunchedEffect(Unit) {
+                            delay(index * StaggerAnimations.ItemDelay)
+                            isVisible = true
+                        }
+                        
+                        AnimatedVisibility(
+                            visible = isVisible,
+                            enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + slideInHorizontally(
+                                animationSpec = tween(AnimationDurations.NORMAL, easing = EasingCurves.iOSEaseOut),
+                                initialOffsetX = { it / 2 }
+                            )
+                        ) {
+                            EnhancedGameCard(
+                                game = game,
+                                onClick = { onGameClick(game.id) },
+                                modifier = Modifier.width(280.dp)
+                            )
+                        }
                     }
                 }
             }
-        } else {
-            EmptyStateCard(
-                title = "No Featured Games",
-                description = "Featured games will appear here when connected to the API",
-                icon = Icons.Default.PlayArrow
-            )
+            uiState.isLoading -> {
+                // Loading State - Show shimmer cards
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    items(3) { index ->
+                        var isVisible by remember { mutableStateOf(false) }
+                        
+                        LaunchedEffect(Unit) {
+                            delay(index * StaggerAnimations.ItemDelay)
+                            isVisible = true
+                        }
+                        
+                        AnimatedVisibility(
+                            visible = isVisible,
+                            enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth))
+                        ) {
+                            ShimmerGameCard(
+                                modifier = Modifier.width(280.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            else -> {
+                // Empty State (no error, not loading, no games)
+                EmptyStateCard(
+                    title = "No Featured Games",
+                    description = "Check back later for featured games",
+                    icon = Icons.Default.PlayArrow
+                )
+            }
         }
     }
 }
@@ -439,7 +479,7 @@ private fun FeaturedGamesSection(
 @Composable
 private fun StatsOverviewSection(uiState: HomeUiState) {
     Column(
-        modifier = Modifier.padding(horizontal = 20.dp)
+        modifier = Modifier.padding(horizontal = 16.dp)
     ) {
         Text(
             text = "Overview",
@@ -450,11 +490,11 @@ private fun StatsOverviewSection(uiState: HomeUiState) {
         
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             StatCard(
                 title = "Games",
-                value = uiState.stats?.totalGames?.let { "$it" } ?: "...",
+                value = uiState.stats?.totalGames?.let { it.toString() } ?: if (uiState.isLoading) "..." else "0",
                 subtitle = "in database",
                 color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f)
@@ -462,7 +502,7 @@ private fun StatsOverviewSection(uiState: HomeUiState) {
             
             StatCard(
                 title = "Devices",
-                value = uiState.stats?.totalDevices?.let { "$it" } ?: "...",
+                value = uiState.stats?.totalDevices?.let { it.toString() } ?: if (uiState.isLoading) "..." else "0",
                 subtitle = "supported",
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f)
@@ -470,7 +510,7 @@ private fun StatsOverviewSection(uiState: HomeUiState) {
             
             StatCard(
                 title = "Listings",
-                value = uiState.stats?.totalListings?.let { "$it" } ?: "...",
+                value = uiState.stats?.totalListings?.let { it.toString() } ?: if (uiState.isLoading) "..." else "0",
                 subtitle = "active",
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.weight(1f)
@@ -514,7 +554,7 @@ private fun StatCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -542,7 +582,7 @@ private fun StatCard(
 @Composable
 fun RecentActivitySection() {
     Column(
-        modifier = Modifier.padding(horizontal = 20.dp)
+        modifier = Modifier.padding(horizontal = 16.dp)
     ) {
         Text(
             text = "Recent Activity",
@@ -691,6 +731,154 @@ private fun PremiumButton(
         if (isPressed) {
             delay(100)
             isPressed = false
+        }
+    }
+}
+
+@Composable
+private fun ShimmerGameCard(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(320.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
+    ) {
+        Column {
+            // Shimmer Image placeholder
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            )
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // Shimmer Title placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            MaterialTheme.shapes.small
+                        )
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Shimmer Subtitle placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            MaterialTheme.shapes.small
+                        )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Shimmer Stats placeholder
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(24.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                MaterialTheme.shapes.small
+                            )
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                CircleShape
+                            )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorStateCard(
+    title: String,
+    description: String,
+    onRetry: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                Icons.Default.ErrorOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(48.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(
+                    Icons.Default.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Retry")
+            }
         }
     }
 }

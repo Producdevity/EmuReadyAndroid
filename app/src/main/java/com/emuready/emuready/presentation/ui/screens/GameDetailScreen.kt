@@ -56,13 +56,13 @@ fun GameDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     var isVisible by remember { mutableStateOf(false) }
     var showAllListings by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(gameId) {
         viewModel.loadGameDetails(gameId)
         delay(200)
         isVisible = true
     }
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -78,6 +78,8 @@ fun GameDetailScreen(
         if (uiState.isLoading) {
             LoadingState()
         } else if (uiState.error != null) {
+            // log the error
+            android.util.Log.e("GameDetailScreen", "Error loading game details: ${uiState.error}")
             ErrorState(
                 error = uiState.error.toString(),
                 onRetry = { viewModel.loadGameDetails(gameId) }
@@ -104,7 +106,7 @@ fun GameDetailScreen(
                         )
                     }
                 }
-                
+
                 // Quick Actions
                 item {
                     AnimatedVisibility(
@@ -123,7 +125,7 @@ fun GameDetailScreen(
                         )
                     }
                 }
-                
+
                 // Compatibility Stats
                 item {
                     AnimatedVisibility(
@@ -138,7 +140,7 @@ fun GameDetailScreen(
                         CompatibilityStatsSection(uiState.game)
                     }
                 }
-                
+
                 // Game Screenshots
                 if (uiState.game?.screenshots?.isNotEmpty() == true) {
                     item {
@@ -155,7 +157,7 @@ fun GameDetailScreen(
                         }
                     }
                 }
-                
+
                 // Community Listings
                 item {
                     AnimatedVisibility(
@@ -176,7 +178,7 @@ fun GameDetailScreen(
                         )
                     }
                 }
-                
+
                 // Game Details and Metadata
                 if (uiState.game != null) {
                     item {
@@ -195,7 +197,7 @@ fun GameDetailScreen(
                 }
             }
         }
-        
+
         // Floating Action Button for Creating Listing
         if (uiState.game != null && isVisible) {
             ExtendedFloatingActionButton(
@@ -265,7 +267,7 @@ private fun HeroSection(
                             .fillMaxSize()
                             .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     )
-                    
+
                     // Gradient overlay for better text readability
                     Box(
                         modifier = Modifier
@@ -280,7 +282,7 @@ private fun HeroSection(
                                 )
                             )
                     )
-                    
+
                     // Favorite Button
                     IconButton(
                         onClick = onToggleFavorite,
@@ -300,7 +302,7 @@ private fun HeroSection(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    
+
                     // Game title overlay
                     Column(
                         modifier = Modifier
@@ -322,7 +324,7 @@ private fun HeroSection(
                         )
                     }
                 }
-                
+
                 // Game Info Cards
                 Row(
                     modifier = Modifier
@@ -419,7 +421,7 @@ private fun QuickActionsSection(
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -431,7 +433,7 @@ private fun QuickActionsSection(
                 isPrimary = true,
                 modifier = Modifier.weight(1f)
             )
-            
+
             PremiumButton(
                 text = "Open in Eden",
                 icon = Icons.Default.PlayArrow,
@@ -455,7 +457,7 @@ private fun CompatibilityStatsSection(game: com.emuready.emuready.domain.entitie
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -476,7 +478,7 @@ private fun CompatibilityStatsSection(game: com.emuready.emuready.domain.entitie
                     Triple("Good", 20, MaterialTheme.colorScheme.tertiary),
                     Triple("Playable", 10, MaterialTheme.colorScheme.outline)
                 )
-                
+
                 performanceLevels.forEach { (level, percentage, color) ->
                     Row(
                         modifier = Modifier
@@ -489,7 +491,7 @@ private fun CompatibilityStatsSection(game: com.emuready.emuready.domain.entitie
                             text = level,
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        
+
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -524,19 +526,19 @@ private fun ScreenshotsSection(screenshots: List<String>) {
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
             itemsIndexed(screenshots) { index, screenshot ->
                 var isVisible by remember { mutableStateOf(false) }
-                
+
                 LaunchedEffect(Unit) {
                     delay(index * 100L)
                     isVisible = true
                 }
-                
+
                 AnimatedVisibility(
                     visible = isVisible,
                     enter = fadeIn(animationSpec = tween(300)) + scaleIn(
@@ -587,7 +589,7 @@ private fun ListingsSection(
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            
+
             if (totalListings > 3) {
                 TextButton(
                     onClick = onToggleShowAll
@@ -600,21 +602,21 @@ private fun ListingsSection(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         if (listings.isNotEmpty()) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 listings.forEachIndexed { index, listing ->
                     var isVisible by remember { mutableStateOf(false) }
-                    
+
                     LaunchedEffect(Unit) {
                         delay(index * StaggerAnimations.ItemDelay)
                         isVisible = true
                     }
-                    
+
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = fadeIn(animationSpec = tween(300)) + slideInHorizontally(
@@ -647,7 +649,7 @@ private fun GameMetadataSection(game: com.emuready.emuready.domain.entities.Game
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -754,18 +756,18 @@ private fun EmptyListingsCard() {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = "No Listings Yet",
                 style = CustomTextStyles.GameTitle,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = "Be the first to create a compatibility listing for this game!",
                 style = MaterialTheme.typography.bodyMedium,
@@ -786,15 +788,15 @@ private fun PremiumButton(
     modifier: Modifier = Modifier
 ) {
     var isPressed by remember { mutableStateOf(false) }
-    
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) MicroAnimations.ButtonPressScale else 1f,
         animationSpec = SpringSpecs.Quick,
         label = "button_scale"
     )
-    
+
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     if (isPrimary) {
         Button(
             onClick = {
@@ -870,7 +872,7 @@ private fun PremiumButton(
             }
         }
     }
-    
+
     LaunchedEffect(isPressed) {
         if (isPressed) {
             delay(100)

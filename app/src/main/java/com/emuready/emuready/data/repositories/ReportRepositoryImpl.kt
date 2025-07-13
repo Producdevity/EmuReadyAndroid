@@ -2,7 +2,7 @@ package com.emuready.emuready.data.repositories
 
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 // import com.emuready.emuready.data.remote.dto.CreateListingReportSchema // TODO: Add missing schema
 import com.emuready.emuready.domain.entities.ReportReason
 import com.emuready.emuready.domain.exceptions.ApiException
@@ -18,7 +18,6 @@ class ReportRepositoryImpl @Inject constructor(
     private val trpcApiService: EmuReadyTrpcApiService
 ) : ReportRepository {
     
-    private val requestBuilder = TrpcRequestBuilder()
     
     override suspend fun reportListing(
         listingId: String,
@@ -35,11 +34,11 @@ class ReportRepositoryImpl @Inject constructor(
                 ReportReason.OTHER -> TrpcRequestDtos.ReportReason.OTHER
             }
             
-            val request = requestBuilder.buildRequest(
+            val input = TrpcInputHelper.createInput(
                 TrpcRequestDtos.CreateListingReportSchema(listingId, reportReason, description)
             )
-            val responseWrapper = trpcApiService.createListingReport(request)
-            val response = responseWrapper.`0`
+            val responseWrapper = trpcApiService.createListingReport(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -53,8 +52,9 @@ class ReportRepositoryImpl @Inject constructor(
     
     override suspend fun checkUserHasReports(userId: String): Result<Pair<Boolean, Int>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.checkUserHasReports(userId = userId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.UserIdRequest(userId = userId))
+            val responseWrapper = trpcApiService.checkUserHasReports(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))

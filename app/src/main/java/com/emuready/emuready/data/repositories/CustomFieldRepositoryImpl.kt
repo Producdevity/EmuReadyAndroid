@@ -2,7 +2,7 @@ package com.emuready.emuready.data.repositories
 
 import com.emuready.emuready.data.mappers.*
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.domain.entities.CustomFieldDefinition
 import com.emuready.emuready.domain.exceptions.ApiException
@@ -18,12 +18,11 @@ class CustomFieldRepositoryImpl @Inject constructor(
     private val trpcApiService: EmuReadyTrpcApiService
 ) : CustomFieldRepository {
     
-    private val requestBuilder = TrpcRequestBuilder()
-    
     override suspend fun getCustomFieldsByEmulator(emulatorId: String): Result<List<CustomFieldDefinition>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getCustomFieldsByEmulator(emulatorId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.EmulatorIdRequest(emulatorId = emulatorId))
+            val responseWrapper = trpcApiService.getCustomFieldsByEmulator(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))

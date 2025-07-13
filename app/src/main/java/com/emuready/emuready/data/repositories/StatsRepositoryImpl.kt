@@ -22,14 +22,14 @@ class StatsRepositoryImpl @Inject constructor(
         try {
             println("StatsRepository: Starting getStats API call...")
             val responseWrapper = trpcApiService.getAppStats()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             println("StatsRepository: Response received: $response")
             
             if (response.error != null) {
                 println("StatsRepository: API Error: ${response.error}")
                 Result.failure(ApiException(response.error.message))
-            } else if (response.result?.data != null) {
-                val stats = response.result.data
+            } else if (response.result?.data?.json != null) {
+                val stats = response.result.data.json
                 println("StatsRepository: Successfully got stats: $stats")
                 Result.success(
                     AppStats(

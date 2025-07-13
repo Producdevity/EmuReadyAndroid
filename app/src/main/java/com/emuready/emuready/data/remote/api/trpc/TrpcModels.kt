@@ -1,7 +1,10 @@
 package com.emuready.emuready.data.remote.api.trpc
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+
+@OptIn(ExperimentalSerializationApi::class)
 
 /**
  * tRPC Request wrapper exactly as specified in the API documentation
@@ -18,16 +21,11 @@ data class TrpcRequestBody<T>(
 )
 
 /**
- * tRPC Response wrapper exactly as specified in the API documentation
- * Format: { "0": { "result": { "data": T } } } or { "0": { "error": TrpcError } }
+ * tRPC Response wrapper exactly as returned by the actual API
+ * Format: { "result": { "data": T } } or { "error": TrpcError }
  */
 @Serializable
 data class TrpcResponseWrapper<T>(
-    val `0`: TrpcResult<T>
-)
-
-@Serializable
-data class TrpcResult<T>(
     val result: TrpcResultData<T>? = null,
     val error: TrpcError? = null
 )

@@ -56,7 +56,7 @@ class NotificationRepositoryImpl @Inject constructor(
     override suspend fun getUnreadCount(): Result<Int> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getUnreadNotificationCount()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -74,7 +74,7 @@ class NotificationRepositoryImpl @Inject constructor(
         try {
             val request = requestBuilder.buildRequest(TrpcRequestDtos.MarkNotificationReadSchema(notificationId = notificationId))
             val responseWrapper = trpcApiService.markNotificationAsRead(request)
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -89,7 +89,7 @@ class NotificationRepositoryImpl @Inject constructor(
     override suspend fun markAllAsRead(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.markAllNotificationsAsRead()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))

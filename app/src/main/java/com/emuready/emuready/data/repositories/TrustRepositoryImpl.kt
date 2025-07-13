@@ -3,7 +3,7 @@ package com.emuready.emuready.data.repositories
 import com.emuready.emuready.data.mappers.*
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.domain.entities.TrustLevel
 import com.emuready.emuready.domain.entities.UserTrustInfo
 import com.emuready.emuready.domain.entities.Verification
@@ -20,12 +20,11 @@ class TrustRepositoryImpl @Inject constructor(
     private val trpcApiService: EmuReadyTrpcApiService
 ) : TrustRepository {
     
-    private val requestBuilder = TrpcRequestBuilder()
     
     override suspend fun getMyTrustInfo(): Result<UserTrustInfo> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getMyTrustInfo()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -42,8 +41,9 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getUserTrustInfo(userId: String): Result<UserTrustInfo> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getUserTrustInfo(userId = userId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.UserIdRequest(userId = userId))
+            val responseWrapper = trpcApiService.getUserTrustInfo(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -61,7 +61,7 @@ class TrustRepositoryImpl @Inject constructor(
     override suspend fun getTrustLevels(): Result<List<TrustLevel>> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getTrustLevels()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -78,8 +78,9 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun isVerifiedDeveloper(emulatorId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.isVerifiedDeveloper(userId = "", emulatorId = emulatorId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.EmulatorIdRequest(emulatorId = emulatorId))
+            val responseWrapper = trpcApiService.isVerifiedDeveloper(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -96,8 +97,11 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun verifyListing(listingId: String, notes: String?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.verifyListing(TrpcRequestBuilder().buildRequest(TrpcRequestDtos.VerifyListingSchema(listingId = listingId, notes = notes)))
-            val response = responseWrapper.`0`
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(TrpcRequestDtos.VerifyListingSchema(listingId = listingId, notes = notes))
+            )
+            val responseWrapper = trpcApiService.verifyListing(request)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -111,8 +115,11 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun removeVerification(verificationId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.removeVerification(TrpcRequestBuilder().buildRequest(TrpcRequestDtos.RemoveVerificationSchema(verificationId = verificationId)))
-            val response = responseWrapper.`0`
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(TrpcRequestDtos.RemoveVerificationSchema(verificationId = verificationId))
+            )
+            val responseWrapper = trpcApiService.removeVerification(request)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -126,8 +133,9 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getListingVerifications(listingId: String): Result<List<Verification>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getListingVerifications(listingId = listingId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.IdRequest(id = listingId))
+            val responseWrapper = trpcApiService.getListingVerifications(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -144,8 +152,9 @@ class TrustRepositoryImpl @Inject constructor(
     
     override suspend fun getMyVerifications(): Result<List<Verification>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getMyVerifications(limit = 50, page = 1)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.PaginationRequest(limit = 50, page = 1))
+            val responseWrapper = trpcApiService.getMyVerifications(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))

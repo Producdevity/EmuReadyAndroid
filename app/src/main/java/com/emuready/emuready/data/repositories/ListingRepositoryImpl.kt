@@ -5,8 +5,9 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.paging.ListingsPagingSource
+import com.emuready.emuready.data.paging.MobileListingsPagingSource
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.domain.entities.*
 import com.emuready.emuready.domain.exceptions.ApiException
@@ -49,16 +50,11 @@ class ListingRepositoryImpl @Inject constructor(
     private val authRepository: AuthRepository
 ) : ListingRepository {
     
-    private val requestBuilder = TrpcRequestBuilder()
-    
-    private inline fun <reified T> createQueryParam(data: T): String {
-        return requestBuilder.buildQueryParam(Json.encodeToString(data))
-    }
-    
     override suspend fun getListingsByGameId(gameId: String): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getListingsByGame(gameId = gameId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.GameIdRequest(gameId = gameId))
+            val responseWrapper = trpcApiService.getListingsByGame(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -75,8 +71,9 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getListingsByUserId(userId: String): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getUserListings(userId = userId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.UserIdRequest(userId = userId))
+            val responseWrapper = trpcApiService.getUserListings(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -93,8 +90,9 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getListingById(listingId: String): Result<Listing> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getListingById(id = listingId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.IdRequest(id = listingId))
+            val responseWrapper = trpcApiService.getListingById(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -112,7 +110,7 @@ class ListingRepositoryImpl @Inject constructor(
     override suspend fun getFeaturedListings(): Result<List<Listing>> = withContext(Dispatchers.IO) {
         try {
             val responseWrapper = trpcApiService.getFeaturedListings()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -142,7 +140,6 @@ class ListingRepositoryImpl @Inject constructor(
             pagingSourceFactory = {
                 ListingsPagingSource(
                     trpcApiService = trpcApiService,
-                    requestBuilder = requestBuilder,
                     gameId = gameId,
                     deviceId = deviceId,
                     emulatorId = emulatorId
@@ -167,9 +164,11 @@ class ListingRepositoryImpl @Inject constructor(
                 }
             )
             
-            val request = requestBuilder.buildRequest(createRequest)
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(createRequest)
+            )
             val responseWrapper = trpcApiService.createListing(request)
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -198,9 +197,11 @@ class ListingRepositoryImpl @Inject constructor(
                 }
             )
             
-            val request = requestBuilder.buildRequest(updateRequest)
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(updateRequest)
+            )
             val responseWrapper = trpcApiService.updateListing(request)
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -217,9 +218,11 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun deleteListing(listingId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.DeleteListingSchema(id = listingId))
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(TrpcRequestDtos.DeleteListingSchema(id = listingId))
+            )
             val responseWrapper = trpcApiService.deleteListing(request)
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -233,9 +236,11 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun voteListing(listingId: String, isUpvote: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.VoteListingSchema(listingId = listingId, value = isUpvote))
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(TrpcRequestDtos.VoteListingSchema(listingId = listingId, value = isUpvote))
+            )
             val responseWrapper = trpcApiService.voteListing(request)
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -249,8 +254,9 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getUserVote(listingId: String): Result<Boolean?> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getUserVote(listingId = listingId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.IdRequest(id = listingId))
+            val responseWrapper = trpcApiService.getUserVote(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -267,8 +273,9 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun getListingComments(listingId: String): Result<List<Comment>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getListingComments(listingId = listingId)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.IdRequest(id = listingId))
+            val responseWrapper = trpcApiService.getListingComments(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -285,9 +292,11 @@ class ListingRepositoryImpl @Inject constructor(
     
     override suspend fun createComment(listingId: String, content: String): Result<Comment> = withContext(Dispatchers.IO) {
         try {
-            val request = requestBuilder.buildRequest(TrpcRequestDtos.CreateCommentSchema(listingId = listingId, content = content))
+            val request = com.emuready.emuready.data.remote.api.trpc.TrpcRequest(
+                com.emuready.emuready.data.remote.api.trpc.TrpcRequestBody(TrpcRequestDtos.CreateCommentSchema(listingId = listingId, content = content))
+            )
             val responseWrapper = trpcApiService.createComment(request)
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -310,13 +319,10 @@ class ListingRepositoryImpl @Inject constructor(
                 enablePlaceholders = false
             ),
             pagingSourceFactory = {
-                // MobileListingsPagingSource(
-                //     trpcApiService = trpcApiService,
-                //     requestBuilder = requestBuilder,
-                //     gameId = gameId
-                // )
-                // Temporary empty paging source
-                EmptyPagingSource()
+                MobileListingsPagingSource(
+                    trpcApiService = trpcApiService,
+                    gameId = gameId
+                )
             }
         ).flow
     }

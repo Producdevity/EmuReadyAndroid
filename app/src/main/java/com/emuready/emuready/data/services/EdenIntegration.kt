@@ -212,7 +212,7 @@ class EdenLaunchService @Inject constructor(
     
     suspend fun isEdenInstalled(): Boolean = withContext(Dispatchers.IO) {
         try {
-            packageManager.getPackageInfo(EDEN_PACKAGE, 0)
+            packageManager.getPackageInfo(EDEN_PACKAGE, PackageManager.GET_ACTIVITIES)
             true
         } catch (e: PackageManager.NameNotFoundException) {
             false

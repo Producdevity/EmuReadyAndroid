@@ -23,7 +23,7 @@ class ListingsViewModel @Inject constructor(
 
     private val searchQuery = MutableStateFlow("")
     private val selectedCategory = MutableStateFlow("All")
-    private val sortOption = MutableStateFlow("Recent")
+    private val sortOption = MutableStateFlow("Default")
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val listings: Flow<PagingData<Listing>> = combine(
@@ -35,10 +35,10 @@ class ListingsViewModel @Inject constructor(
     }.flatMapLatest { query ->
         getListingsUseCase(
             search = query.searchQuery.takeIf { it.isNotBlank() },
-            gameId = null,
+            gameId = null, // Will be set when user selects a specific game
             systemId = null,
-            deviceId = null,
-            emulatorId = null
+            deviceId = null, // Will be set when user selects a specific device
+            emulatorId = null // Will be set when user selects a specific emulator
         )
     }.cachedIn(viewModelScope)
 
@@ -77,7 +77,7 @@ class ListingsViewModel @Inject constructor(
 data class ListingsUiState(
     val searchQuery: String = "",
     val selectedCategory: String = "All",
-    val sortOption: String = "Recent"
+    val sortOption: String = "Default"
 )
 
 private data class ListingsQuery(

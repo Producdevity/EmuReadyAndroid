@@ -4,7 +4,7 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
 import com.emuready.emuready.domain.entities.PcListing
@@ -13,32 +13,28 @@ import kotlinx.serialization.json.Json
 
 class PcListingsPagingSource(
     private val trpcApiService: EmuReadyTrpcApiService,
-    private val requestBuilder: TrpcRequestBuilder,
     private val gameId: String
 ) : PagingSource<Int, PcListing>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, PcListing> {
         val page = params.key ?: 1
         return try {
-            val request = requestBuilder.buildRequest(
+            val input = TrpcInputHelper.createInput(
                 TrpcRequestDtos.GetPcListingsSchema(
                     page = page,
                     limit = params.loadSize,
                     gameId = gameId
                 )
             )
-            val responseWrapper = trpcApiService.getPcListings(
-                page = page,
-                limit = params.loadSize,
-                gameId = gameId
-            )
-            val response = responseWrapper.`0`
+            val responseWrapper = trpcApiService.getPcListings(input = input)
+            val response = responseWrapper
 
             if (response.error != null) {
                 return LoadResult.Error(Exception(response.error.message))
             }
 
-            val listingsResponse = response.result as? TrpcResponseDtos.MobilePcListingsResponse
+            // getPcListings returns MobilePcListingsResponse
+            val listingsResponse = response.result?.data
             val listings = listingsResponse?.listings?.map { it.toDomain() } ?: emptyList()
 
             LoadResult.Page(

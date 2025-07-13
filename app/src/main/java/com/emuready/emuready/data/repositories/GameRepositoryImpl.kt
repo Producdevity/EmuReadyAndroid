@@ -7,7 +7,7 @@ import com.emuready.emuready.data.local.dao.GameDao
 import com.emuready.emuready.data.mappers.toDomain
 import com.emuready.emuready.data.mappers.toEntity
 import com.emuready.emuready.data.remote.api.EmuReadyTrpcApiService
-import com.emuready.emuready.data.remote.api.trpc.TrpcRequestBuilder
+import com.emuready.emuready.data.remote.api.trpc.TrpcInputHelper
 import com.emuready.emuready.data.remote.dto.TrpcRequestDtos
 import com.emuready.emuready.data.remote.dto.TrpcResponseDtos
 import com.emuready.emuready.data.paging.FilteredGamesPagingSource
@@ -41,7 +41,6 @@ class GameRepositoryImpl @Inject constructor(
     private val gameDao: GameDao
 ) : GameRepository {
     
-    private val requestBuilder = TrpcRequestBuilder()
     
     override fun getGames(
         search: String?,
@@ -59,7 +58,6 @@ class GameRepositoryImpl @Inject constructor(
             pagingSourceFactory = {
                 GamesPagingSource(
                     trpcApiService = trpcApiService,
-                    requestBuilder = requestBuilder,
                     search = search,
                     sortBy = sortBy,
                     systemIds = systemIds,
@@ -74,14 +72,15 @@ class GameRepositoryImpl @Inject constructor(
     override suspend fun getGameDetail(gameId: String): Result<GameDetail> = withContext(Dispatchers.IO) {
         try {
             // Get game details from API
-            val gameResponseWrapper = trpcApiService.getGameById(id = gameId)
-            val gameResponse = gameResponseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.IdRequest(id = gameId))
+            val gameResponseWrapper = trpcApiService.getGameById(input = input)
+            val gameResponse = gameResponseWrapper
             
             if (gameResponse.error != null) {
                 return@withContext Result.failure(ApiException(gameResponse.error.message))
             }
             
-            val gameData = gameResponse.result?.data
+            val gameData = gameResponse.result?.data?.json
                 ?: return@withContext Result.failure(ApiException("Game not found"))
             
             // Get game listings - simplified for now
@@ -138,7 +137,7 @@ class GameRepositoryImpl @Inject constructor(
             android.util.Log.d("GameRepository", "Calling getPopularGames API...")
             // For GET requests, pass empty query parameter for endpoints that don't need parameters
             val responseWrapper = trpcApiService.getPopularGames()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             android.util.Log.d("GameRepository", "API response received. Error: ${response.error}, Result: ${response.result}")
             
@@ -169,7 +168,7 @@ class GameRepositoryImpl @Inject constructor(
         try {
             // Use getPopularGames as there's no specific recommendations endpoint in the new API
             val responseWrapper = trpcApiService.getPopularGames()
-            val response = responseWrapper.`0`
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -200,8 +199,9 @@ class GameRepositoryImpl @Inject constructor(
     
     override suspend fun syncGamesFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getGames(search = null, systemId = null, limit = 100)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.GetGamesSchema(limit = 50, hideGamesWithNoListings = false))
+            val responseWrapper = trpcApiService.getGames(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -221,14 +221,16 @@ class GameRepositoryImpl @Inject constructor(
         try {
             // Fetch all the filter options from the API
             val systemsResponseWrapper = trpcApiService.getSystems()
-            val devicesResponseWrapper = trpcApiService.getDevices(search = null, brandId = null, limit = 100)
-            val emulatorsResponseWrapper = trpcApiService.getEmulators(systemId = null, search = null, limit = 100)
+            val deviceInput = TrpcInputHelper.createInput(TrpcRequestDtos.LimitRequest(limit = 100))
+            val devicesResponseWrapper = trpcApiService.getDevices(input = deviceInput)
+            val emulatorInput = TrpcInputHelper.createInput(TrpcRequestDtos.LimitRequest(limit = 100))
+            val emulatorsResponseWrapper = trpcApiService.getEmulators(input = emulatorInput)
             val performanceResponseWrapper = trpcApiService.getPerformanceScales()
             
-            val systemsResponse = systemsResponseWrapper.`0`
-            val devicesResponse = devicesResponseWrapper.`0`
-            val emulatorsResponse = emulatorsResponseWrapper.`0`
-            val performanceResponse = performanceResponseWrapper.`0`
+            val systemsResponse = systemsResponseWrapper
+            val devicesResponse = devicesResponseWrapper
+            val emulatorsResponse = emulatorsResponseWrapper
+            val performanceResponse = performanceResponseWrapper
             
             val filters = mutableMapOf<FilterType, List<FilterOption>>()
             
@@ -285,8 +287,9 @@ class GameRepositoryImpl @Inject constructor(
 
     override suspend fun getCpus(search: String?, brandId: String?, limit: Int?): Result<List<Cpu>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getCpusEnhanced(search = search, brandId = brandId, limit = limit)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.SearchWithBrandRequest(search = search?.takeIf { it.isNotBlank() }, brandId = brandId?.takeIf { it.isNotBlank() }))
+            val responseWrapper = trpcApiService.getCpusEnhanced(input = input)
+            val response = responseWrapper
 
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -303,8 +306,9 @@ class GameRepositoryImpl @Inject constructor(
 
     override suspend fun getGpus(search: String?, brandId: String?, limit: Int?): Result<List<Gpu>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.getGpusEnhanced(search = search, brandId = brandId, limit = limit)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.SearchWithBrandRequest(search = search?.takeIf { it.isNotBlank() }, brandId = brandId?.takeIf { it.isNotBlank() }))
+            val responseWrapper = trpcApiService.getGpusEnhanced(input = input)
+            val response = responseWrapper
 
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -324,8 +328,9 @@ class GameRepositoryImpl @Inject constructor(
      */
     override suspend fun searchGames(query: String): Result<List<Game>> = withContext(Dispatchers.IO) {
         try {
-            val responseWrapper = trpcApiService.searchGames(query = query)
-            val response = responseWrapper.`0`
+            val input = TrpcInputHelper.createInput(TrpcRequestDtos.QueryRequest(query = query))
+            val responseWrapper = trpcApiService.searchGames(input = input)
+            val response = responseWrapper
             
             if (response.error != null) {
                 Result.failure(ApiException(response.error.message))
@@ -356,7 +361,6 @@ class GameRepositoryImpl @Inject constructor(
             pagingSourceFactory = {
                 FilteredGamesPagingSource(
                     trpcApiService = trpcApiService,
-                    requestBuilder = requestBuilder,
                     search = search,
                     sortBy = sortBy,
                     systemIds = systemIds,

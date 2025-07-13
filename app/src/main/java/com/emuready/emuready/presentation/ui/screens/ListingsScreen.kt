@@ -51,18 +51,18 @@ fun ListingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listings = viewModel.listings.collectAsLazyPagingItems()
-    
+
     // Use ViewModel state instead of local state
     var searchQuery by remember { mutableStateOf(uiState.searchQuery) }
     var selectedFilter by remember { mutableStateOf(uiState.selectedCategory) }
     var sortBy by remember { mutableStateOf(uiState.sortOption) }
     var isVisible by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(Unit) {
         delay(50)
         isVisible = true
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -84,7 +84,7 @@ fun ListingsScreen(
         ) {
             ListingsHeader(
                 searchQuery = searchQuery,
-                onSearchQueryChange = { 
+                onSearchQueryChange = {
                     searchQuery = it
                     viewModel.updateSearchQuery(it)
                 },
@@ -92,7 +92,7 @@ fun ListingsScreen(
                 onNavigateToCreate = onNavigateToCreate
             )
         }
-        
+
         // Filter and Sort Row
         AnimatedVisibility(
             visible = isVisible,
@@ -105,18 +105,18 @@ fun ListingsScreen(
         ) {
             FilterSortRow(
                 selectedFilter = selectedFilter,
-                onFilterSelected = { 
+                onFilterSelected = {
                     selectedFilter = it
                     viewModel.updateSelectedCategory(it)
                 },
                 sortBy = sortBy,
-                onSortByChanged = { 
+                onSortByChanged = {
                     sortBy = it
                     viewModel.updateSortOption(it)
                 }
             )
         }
-        
+
         // Listings List
         AnimatedVisibility(
             visible = isVisible,
@@ -174,13 +174,13 @@ private fun ListingsHeader(
                         tint = Secondary
                     )
                 }
-                
+
                 Text(
-                    text = "Marketplace",
+                    text = "Compatibility Listings",
                     style = MaterialTheme.typography.headlineMedium,
                     color = OnSurface
                 )
-                
+
                 IconButton(
                     onClick = { onNavigateToCreate() }
                 ) {
@@ -191,9 +191,9 @@ private fun ListingsHeader(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Search Bar
             OutlinedTextField(
                 value = searchQuery,
@@ -243,9 +243,9 @@ private fun FilterSortRow(
     sortBy: String,
     onSortByChanged: (String) -> Unit
 ) {
-    val filters = listOf("All", "Devices", "Games", "Accessories", "Bundles")
-    val sortOptions = listOf("Recent", "Price Low", "Price High", "Popular")
-    
+    val filters = listOf("All", "Game-specific", "Device-specific", "Emulator-specific")
+    val sortOptions = listOf("Default", "Recent")
+
     Column(
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
@@ -260,10 +260,10 @@ private fun FilterSortRow(
                 style = MaterialTheme.typography.titleMedium,
                 color = OnBackground
             )
-            
+
             // Sort dropdown
             var showSortMenu by remember { mutableStateOf(false) }
-            
+
             Box {
                 TextButton(
                     onClick = { showSortMenu = true }
@@ -281,7 +281,7 @@ private fun FilterSortRow(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                
+
                 DropdownMenu(
                     expanded = showSortMenu,
                     onDismissRequest = { showSortMenu = false }
@@ -298,21 +298,21 @@ private fun FilterSortRow(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
             itemsIndexed(filters) { index, filter ->
                 var isVisible by remember { mutableStateOf(false) }
-                
+
                 LaunchedEffect(Unit) {
                     delay(index * 30L)
                     isVisible = true
                 }
-                
+
                 AnimatedVisibility(
                     visible = isVisible,
                     enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + slideInHorizontally(
@@ -341,15 +341,15 @@ private fun FilterChip(
     val backgroundColor = if (isSelected) color else SurfaceElevated
     val textColor = if (isSelected) OnPrimary else OnSurface
     val borderColor = if (isSelected) color else Outline.copy(alpha = 0.5f)
-    
+
     var isPressed by remember { mutableStateOf(false) }
-    
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) MicroAnimations.ButtonPressScale else 1f,
         animationSpec = SpringSpecs.Quick,
         label = "chip_scale"
     )
-    
+
     Surface(
         onClick = {
             isPressed = true
@@ -371,7 +371,7 @@ private fun FilterChip(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
-    
+
     LaunchedEffect(isPressed) {
         if (isPressed) {
             delay(100)
@@ -398,12 +398,12 @@ private fun ListingsList(
                 val listing = listings[index]
                 if (listing != null) {
                     var isVisible by remember { mutableStateOf(false) }
-                    
+
                     LaunchedEffect(Unit) {
                         delay(index * StaggerAnimations.ItemDelay)
                         isVisible = true
                     }
-                    
+
                     AnimatedVisibility(
                         visible = isVisible,
                         enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + slideInHorizontally(
@@ -437,19 +437,19 @@ private fun ListingCard(
     onClick: () -> Unit
 ) {
     var isPressed by remember { mutableStateOf(false) }
-    
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) MicroAnimations.ButtonPressScale else 1f,
         animationSpec = SpringSpecs.Quick,
         label = "listing_card_scale"
     )
-    
+
     val elevation by animateDpAsState(
         targetValue = if (isPressed) ElevationAnimations.CardPressed else ElevationAnimations.CardIdle,
         animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth),
         label = "listing_card_elevation"
     )
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -481,7 +481,7 @@ private fun ListingCard(
                 color = when (listing.performanceLevel) {
                     PerformanceLevel.PERFECT -> SuccessGreen
                     PerformanceLevel.GREAT -> SecondaryTeal
-                    PerformanceLevel.GOOD -> SecondaryTeal  
+                    PerformanceLevel.GOOD -> SecondaryTeal
                     PerformanceLevel.PLAYABLE -> AccentOrange
                     PerformanceLevel.POOR -> NeutralGray300
                     PerformanceLevel.UNPLAYABLE -> Color.Red
@@ -498,11 +498,11 @@ private fun ListingCard(
                         text = listing.performanceLevel.displayName,
                         style = CustomTextStyles.Caption,
                         color = Color.White,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
                 }
             }
-            
+
             // Content
             Column(
                 modifier = Modifier
@@ -518,18 +518,18 @@ private fun ListingCard(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    
+
                     Spacer(modifier = Modifier.height(4.dp))
-                    
+
                     Text(
                         text = "Device: ${listing.deviceId}",
                         style = CustomTextStyles.GameSubtitle,
                         color = OnSurfaceVariant
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
-                    // Verification badge  
+
+                    // Verification badge
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = if (listing.isVerified) SuccessGreen.copy(alpha = 0.1f) else AccentOrange.copy(alpha = 0.1f)
@@ -542,7 +542,7 @@ private fun ListingCard(
                         )
                     }
                 }
-                
+
                 // Score and votes
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -554,7 +554,7 @@ private fun ListingCard(
                         style = CustomTextStyles.CardAccent,
                         color = Secondary
                     )
-                    
+
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -573,7 +573,7 @@ private fun ListingCard(
                     }
                 }
             }
-            
+
             // Verified badge
             if (listing.isVerified) {
                 Icon(
@@ -585,7 +585,7 @@ private fun ListingCard(
             }
         }
     }
-    
+
     LaunchedEffect(isPressed) {
         if (isPressed) {
             delay(100)
@@ -615,11 +615,11 @@ private fun EmptyListingsState(onNavigateToCreate: () -> Unit) {
         ) {
             // Animated shopping icon
             var isAnimating by remember { mutableStateOf(false) }
-            
+
             LaunchedEffect(Unit) {
                 isAnimating = true
             }
-            
+
             val scale by animateFloatAsState(
                 targetValue = if (isAnimating) 1.1f else 0.9f,
                 animationSpec = infiniteRepeatable(
@@ -628,7 +628,7 @@ private fun EmptyListingsState(onNavigateToCreate: () -> Unit) {
                 ),
                 label = "shopping_scale"
             )
-            
+
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = SecondaryTeal.copy(alpha = 0.1f),
@@ -644,34 +644,34 @@ private fun EmptyListingsState(onNavigateToCreate: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Default.ShoppingCart,
+                        Icons.Default.Build,
                         contentDescription = "No listings",
                         tint = SecondaryTeal,
                         modifier = Modifier.size(40.dp)
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Text(
                 text = "No Listings Found",
                 style = MaterialTheme.typography.headlineSmall,
                 color = OnSurface,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = "Be the first to create a listing in this category",
                 style = MaterialTheme.typography.bodyMedium,
                 color = OnSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Button(
                 onClick = { onNavigateToCreate() },
                 shape = RoundedCornerShape(12.dp),

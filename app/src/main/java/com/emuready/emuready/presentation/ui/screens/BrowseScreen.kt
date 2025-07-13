@@ -27,6 +27,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,7 +66,7 @@ import com.emuready.emuready.presentation.viewmodels.SortOption
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun BrowseScreen(
     onNavigateToGame: (String) -> Unit,
@@ -74,9 +78,12 @@ fun BrowseScreen(
     val scrollState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
     
-    var isSearchFocused by remember { mutableStateOf(false) }
+    var isSearchActive by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
     var showSortOptions by remember { mutableStateOf(false) }
+    
+    // Enhanced scroll behavior for header visibility
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     
     Box(
         modifier = Modifier
@@ -86,17 +93,18 @@ fun BrowseScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Modern Search Header
-            SearchHeader(
+            // Modern Material 3 Search Header
+            ModernSearchHeader(
                 searchQuery = uiState.searchQuery,
                 onSearchQueryChange = viewModel::updateSearchQuery,
-                isSearchFocused = isSearchFocused,
-                onSearchFocusChange = { isSearchFocused = it },
+                isSearchActive = isSearchActive,
+                onSearchActiveChange = { isSearchActive = it },
                 showFilters = showFilters,
                 onToggleFilters = { showFilters = !showFilters },
                 activeFilterCount = uiState.activeFilters.size,
                 sortOption = uiState.sortOption,
-                onShowSortOptions = { showSortOptions = true }
+                onShowSortOptions = { showSortOptions = true },
+                scrollBehavior = scrollBehavior
             )
             
             // Animated Filter Section
@@ -229,44 +237,48 @@ fun BrowseScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SearchHeader(
+private fun ModernSearchHeader(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    isSearchFocused: Boolean,
-    onSearchFocusChange: (Boolean) -> Unit,
+    isSearchActive: Boolean,
+    onSearchActiveChange: (Boolean) -> Unit,
     showFilters: Boolean,
     onToggleFilters: () -> Unit,
     activeFilterCount: Int,
     sortOption: SortOption,
-    onShowSortOptions: () -> Unit
+    onShowSortOptions: () -> Unit,
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = if (isSearchFocused) 8.dp else 4.dp,
+        tonalElevation = 2.dp,
+        shadowElevation = if (isSearchActive) 8.dp else 2.dp,
         color = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            // Search Bar
-            TextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp)),
+            // Modern Material 3 Search Bar
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = onSearchQueryChange,
+                onSearch = { onSearchActiveChange(false) },
+                active = isSearchActive,
+                onActiveChange = onSearchActiveChange,
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
                         text = "Search games...",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = null,
+                        contentDescription = "Search",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
@@ -277,80 +289,99 @@ private fun SearchHeader(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear search"
+                                contentDescription = "Clear search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 },
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
+                colors = SearchBarDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    inputFieldColors = TextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
                 )
-            )
-            
-            // Action Buttons Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Filter Button with Badge
-                AssistChip(
-                    onClick = onToggleFilters,
-                    label = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                // Search suggestions or recent searches could go here
+            }
+            
+            // Enhanced Action Buttons Row
+            AnimatedVisibility(
+                visible = !isSearchActive,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Enhanced Filter Button with improved accessibility
+                    FilterChip(
+                        selected = showFilters,
+                        onClick = onToggleFilters,
+                        label = {
+                            Text(
+                                text = "Filters",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        leadingIcon = {
                             Icon(
-                                imageVector = if (showFilters) Icons.Default.Done else Icons.Default.Menu,
+                                imageVector = if (showFilters) Icons.Default.FilterList else Icons.Default.Tune,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Text("Filters")
-                            if (activeFilterCount > 0) {
+                        },
+                        trailingIcon = if (activeFilterCount > 0) {
+                            {
                                 Badge(
                                     containerColor = MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary
                                 ) {
                                     Text(
                                         text = activeFilterCount.toString(),
-                                        style = MaterialTheme.typography.labelSmall
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
-                        }
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (showFilters) 
-                            MaterialTheme.colorScheme.primaryContainer 
-                        else MaterialTheme.colorScheme.surfaceVariant
+                        } else null
                     )
-                )
-                
-                // Sort Button
-                AssistChip(
-                    onClick = onShowSortOptions,
-                    label = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                    
+                    // Enhanced Sort Button with better contrast
+                    AssistChip(
+                        onClick = onShowSortOptions,
+                        label = {
+                            Text(
+                                text = sortOption.displayName,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Sort,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        trailingIcon = {
                             Icon(
                                 imageVector = Icons.Default.ArrowDropDown,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Text(sortOption.displayName)
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -365,13 +396,15 @@ private fun FilterSection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        tonalElevation = 1.dp,
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 20.dp)
         ) {
+            // Enhanced header with better typography and contrast
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -379,21 +412,42 @@ private fun FilterSection(
             ) {
                 Text(
                     text = "Filter by",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                if (activeFilters.values.any { it.isNotEmpty() }) {
-                    TextButton(onClick = onClearFilters) {
-                        Text("Clear all")
+                AnimatedVisibility(
+                    visible = activeFilters.values.any { it.isNotEmpty() },
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    FilledTonalButton(
+                        onClick = onClearFilters,
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Clear all",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
-            // Filter Categories
+            // Enhanced Filter Categories with better spacing
             availableFilters.forEach { (filterType, options) ->
-                FilterCategory(
+                EnhancedFilterCategory(
                     title = filterType.displayName,
                     options = options,
                     selectedOptions = activeFilters[filterType] ?: emptySet(),
@@ -401,7 +455,7 @@ private fun FilterSection(
                         onFilterToggle(filterType, optionId)
                     }
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -409,7 +463,7 @@ private fun FilterSection(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FilterCategory(
+private fun EnhancedFilterCategory(
     title: String,
     options: List<FilterOption>,
     selectedOptions: Set<String>,
@@ -418,9 +472,10 @@ private fun FilterCategory(
     Column {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp)
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(bottom = 12.dp)
         )
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -430,6 +485,7 @@ private fun FilterCategory(
                 val animationDelay = index * 30L
                 var isVisible by remember { mutableStateOf(false) }
                 val haptic = LocalHapticFeedback.current
+                val isSelected = option.id in selectedOptions
                 
                 LaunchedEffect(Unit) {
                     delay(animationDelay)
@@ -453,27 +509,45 @@ private fun FilterCategory(
                     )
                 ) {
                     FilterChip(
-                        selected = option.id in selectedOptions,
+                        selected = isSelected,
                         onClick = { 
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onOptionToggle(option.id) 
                         },
                         label = {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(option.name)
+                                Text(
+                                    text = option.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                                )
                                 if (option.count > 0) {
-                                    Text(
-                                        text = "(${option.count})",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (isSelected) 
+                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f)
+                                        else 
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f),
+                                        modifier = Modifier.padding(0.dp)
+                                    ) {
+                                        Text(
+                                            text = option.count.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSelected)
+                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                            else
+                                                MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
                                 }
                             }
                         },
-                        leadingIcon = if (option.id in selectedOptions) {
+                        leadingIcon = if (isSelected) {
                             {
                                 AnimatedVisibility(
                                     visible = true,
@@ -587,16 +661,23 @@ private fun GameCard(
                 ) {
                     isPressed = !isPressed
                 },
-            elevation = CardDefaults.cardElevation(defaultElevation = elevation.dp),
-            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = elevation.dp,
+                pressedElevation = 2.dp,
+                hoveredElevation = 12.dp
+            ),
+            shape = RoundedCornerShape(20.dp),
             border = if (borderAlpha > 0) {
-                androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
+                BorderStroke(
+                    width = 2.dp,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = borderAlpha)
                 )
-            } else null,
+            } else BorderStroke(
+                width = 0.5.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+            ),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
             )
         ) {
             Column {
@@ -612,67 +693,73 @@ private fun GameCard(
                         modifier = Modifier.fillMaxSize()
                     )
                     
-                    // Bottom gradient for better text readability
+                    // Enhanced gradient overlay for superior text readability
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(60.dp)
+                            .height(80.dp)
                             .align(Alignment.BottomCenter)
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
                                         Color.Transparent,
-                                        Color.Black.copy(alpha = 0.7f)
-                                    )
+                                        Color.Black.copy(alpha = 0.4f),
+                                        Color.Black.copy(alpha = 0.8f)
+                                    ),
+                                    startY = 0f,
+                                    endY = Float.POSITIVE_INFINITY
                                 )
                             )
                     )
                     
-                    // Listing count badge
+                    // Enhanced listing count badge with better contrast
                     if (game.totalListings > 0) {
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                                .padding(12.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                            shadowElevation = 2.dp
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.List,
+                                    imageVector = Icons.Default.Inventory,
                                     contentDescription = null,
                                     modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = game.totalListings.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
                     }
                 }
                 
-                // Game Info
+                // Enhanced Game Info with better spacing and contrast
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp)
+                        .padding(16.dp)
                 ) {
                     Text(
                         text = game.title,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = MaterialTheme.typography.titleMedium.lineHeight
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -680,25 +767,34 @@ private fun GameCard(
                     ) {
                         Text(
                             text = game.system?.name ?: "Unknown System",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
                         if (game.averageCompatibility > 0) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(0.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = String.format("%.1f", game.averageCompatibility * 5),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = String.format("%.1f", game.averageCompatibility * 5),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                             }
                         }
                     }
@@ -746,23 +842,101 @@ private fun SortOptionsSheet(
 
 @Composable
 private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 160.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        items(12) { index ->
+            ShimmerGameCard(index = index)
+        }
+    }
+}
+
+@Composable
+private fun ShimmerGameCard(index: Int) {
+    val animationDelay = (index * 50L).toInt()
+    var isVisible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        delay(animationDelay.toLong())
+        isVisible = true
+    }
+    
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(
+            animationSpec = tween(
+                durationMillis = 300,
+                delayMillis = animationDelay
+            )
+        ) + scaleIn(
+            animationSpec = tween(
+                durationMillis = 300,
+                delayMillis = animationDelay
+            ),
+            initialScale = 0.8f
+        )
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            )
         ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(48.dp),
-                strokeWidth = 3.dp
-            )
-            Text(
-                text = "Loading games...",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column {
+                // Shimmer cover
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.75f)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
+                
+                // Shimmer content
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(20.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(4.dp)
+                            )
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(16.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(4.dp)
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(16.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(4.dp)
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -776,39 +950,68 @@ private fun ErrorState(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(32.dp)
+        Surface(
+            modifier = Modifier.padding(24.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 2.dp
         ) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-            Text(
-                text = "Something went wrong",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = error.message ?: "An unexpected error occurred",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Button(
-                onClick = onRetry,
-                modifier = Modifier.padding(top = 8.dp)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier.padding(32.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ErrorOutline,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(20.dp),
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+                
+                Text(
+                    text = "Something went wrong",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Try again")
+                
+                Text(
+                    text = error.message ?: "We couldn't load the games. Please check your connection and try again.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+                )
+                
+                FilledTonalButton(
+                    onClick = onRetry,
+                    modifier = Modifier.padding(top = 8.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Try again",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -820,37 +1023,56 @@ private fun EmptyState(searchQuery: String) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(32.dp)
+        Surface(
+            modifier = Modifier.padding(24.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 1.dp
         ) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = if (searchQuery.isNotEmpty()) {
-                    "No games found for \"$searchQuery\""
-                } else {
-                    "No games found"
-                },
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = if (searchQuery.isNotEmpty()) {
-                    "Try adjusting your search or filters"
-                } else {
-                    "Try adjusting your filters"
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier.padding(40.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(100.dp)
+                ) {
+                    Icon(
+                        imageVector = if (searchQuery.isNotEmpty()) Icons.Default.SearchOff else Icons.Default.Gamepad,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .padding(25.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Text(
+                    text = if (searchQuery.isNotEmpty()) {
+                        "No games found"
+                    } else {
+                        "No games available"
+                    },
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                
+                Text(
+                    text = if (searchQuery.isNotEmpty()) {
+                        "We couldn't find any games matching \"$searchQuery\".\nTry adjusting your search terms or filters."
+                    } else {
+                        "No games match your current filters.\nTry adjusting your filter settings."
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+                )
+            }
         }
     }
 }

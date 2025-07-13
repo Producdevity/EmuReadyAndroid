@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.emuready.emuready.presentation.components.cards.EnhancedGameCard
 import com.emuready.emuready.presentation.ui.theme.*
 import com.emuready.emuready.presentation.viewmodels.BrowseViewModel
@@ -38,7 +40,8 @@ fun GamesScreen(
     viewModel: BrowseViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
+    val games = viewModel.games.collectAsLazyPagingItems()
+    var searchQuery by remember { mutableStateOf(uiState.searchQuery) }
     var selectedGenre by remember { mutableStateOf("All") }
     var isVisible by remember { mutableStateOf(false) }
     
@@ -50,14 +53,7 @@ fun GamesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Background,
-                        SurfaceVariant.copy(alpha = 0.05f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header with Search
         AnimatedVisibility(
@@ -68,7 +64,10 @@ fun GamesScreen(
         ) {
             GamesHeader(
                 searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it },
+                onSearchQueryChange = { 
+                    searchQuery = it
+                    viewModel.updateSearchQuery(it)
+                },
                 onNavigateBack = onNavigateBack
             )
         }
@@ -100,7 +99,7 @@ fun GamesScreen(
             )
         ) {
             GamesGrid(
-                games = emptyList(), // Using empty list for now since this screen is deprecated
+                games = games,
                 onGameClick = onNavigateToGame
             )
         }
@@ -113,74 +112,73 @@ private fun GamesHeader(
     onSearchQueryChange: (String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                spotColor = PrimaryPurple.copy(alpha = 0.15f)
-            ),
-        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = SurfaceElevated
-        )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(
+                start = 4.dp,
+                end = 16.dp,
+                top = 8.dp,
+                bottom = 16.dp
+            )
         ) {
-            // Top Bar
+            // Top App Bar
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = onNavigateBack
                 ) {
                     Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Primary
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Navigate back",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 
                 Text(
                     text = "Games Library",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = OnSurface
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
                 )
                 
                 IconButton(
                     onClick = { /* Filter options */ }
                 ) {
                     Icon(
-                        Icons.Default.Menu,
-                        contentDescription = "Filter",
-                        tint = Primary
+                        Icons.Default.FilterList,
+                        contentDescription = "Filter games",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
             
             // Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
                 placeholder = {
                     Text(
                         text = "Search games...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = OnSurfaceVariant
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Search,
                         contentDescription = "Search",
-                        tint = Primary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 trailingIcon = {
@@ -190,17 +188,20 @@ private fun GamesHeader(
                         ) {
                             Icon(
                                 Icons.Default.Clear,
-                                contentDescription = "Clear",
-                                tint = OnSurfaceVariant
+                                contentDescription = "Clear search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 },
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = Outline.copy(alpha = 0.5f)
-                )
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                ),
+                singleLine = true
             )
         }
     }
@@ -211,18 +212,18 @@ private fun GenreFilter(
     selectedGenre: String,
     onGenreSelected: (String) -> Unit
 ) {
-    val genres = listOf(
-        "All", "Action", "Adventure", "RPG", "Strategy", 
-        "Puzzle", "Sports", "Racing", "Fighting", "Platformer"
+    val systems = listOf(
+        "All Systems", "Nintendo 64", "PlayStation", "Super Nintendo", 
+        "Game Boy", "Sega Genesis", "Nintendo DS", "PSP", "Dreamcast"
     )
     
     Column(
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "Genres",
+            text = "Systems",
             style = MaterialTheme.typography.titleMedium,
-            color = OnBackground,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 12.dp)
         )
         
@@ -230,7 +231,7 @@ private fun GenreFilter(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
-            itemsIndexed(genres) { index, genre ->
+            itemsIndexed(systems) { index, system ->
                 var isVisible by remember { mutableStateOf(false) }
                 
                 LaunchedEffect(Unit) {
@@ -245,9 +246,9 @@ private fun GenreFilter(
                     )
                 ) {
                     GenreChip(
-                        text = genre,
-                        isSelected = genre == selectedGenre,
-                        onClick = { onGenreSelected(genre) }
+                        text = system,
+                        isSelected = system == selectedGenre,
+                        onClick = { onGenreSelected(system) }
                     )
                 }
             }
@@ -261,10 +262,6 @@ private fun GenreChip(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) Primary else SurfaceElevated
-    val textColor = if (isSelected) OnPrimary else OnSurface
-    val borderColor = if (isSelected) Primary else Outline.copy(alpha = 0.5f)
-    
     var isPressed by remember { mutableStateOf(false) }
     
     val scale by animateFloatAsState(
@@ -273,27 +270,34 @@ private fun GenreChip(
         label = "chip_scale"
     )
     
-    Surface(
+    FilterChip(
         onClick = {
             isPressed = true
             onClick()
         },
+        label = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge
+            )
+        },
+        selected = isSelected,
         modifier = Modifier,
-        shape = RoundedCornerShape(20.dp),
-        color = backgroundColor,
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = borderColor
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = MaterialTheme.colorScheme.surface,
+            labelColor = MaterialTheme.colorScheme.onSurface
         ),
-        shadowElevation = if (isSelected) 4.dp else 0.dp
-    ) {
-        Text(
-            text = text,
-            style = CustomTextStyles.ButtonText,
-            color = textColor,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = isSelected,
+            borderColor = MaterialTheme.colorScheme.outline,
+            selectedBorderColor = MaterialTheme.colorScheme.primary,
+            borderWidth = 1.dp,
+            selectedBorderWidth = 1.dp
         )
-    }
+    )
     
     LaunchedEffect(isPressed) {
         if (isPressed) {
@@ -305,42 +309,45 @@ private fun GenreChip(
 
 @Composable
 private fun GamesGrid(
-    games: List<com.emuready.emuready.domain.entities.Game>,
+    games: androidx.paging.compose.LazyPagingItems<com.emuready.emuready.domain.entities.Game>,
     onGameClick: (String) -> Unit
 ) {
-    if (games.isNotEmpty()) {
+    if (games.itemCount > 0) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 100.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            items(games) { game ->
-                var isVisible by remember { mutableStateOf(false) }
-                
-                LaunchedEffect(Unit) {
-                    delay(50L)
-                    isVisible = true
-                }
-                
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + scaleIn(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        initialScale = 0.8f
-                    )
-                ) {
-                    EnhancedGameCard(
-                        game = game,
-                        onClick = { onGameClick(game.id) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            items(games.itemCount) { index ->
+                val game = games[index]
+                if (game != null) {
+                    var isVisible by remember { mutableStateOf(false) }
+                    
+                    LaunchedEffect(Unit) {
+                        delay(index * 20L) // Stagger animation based on index
+                        isVisible = true
+                    }
+                    
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = fadeIn(animationSpec = tween(AnimationDurations.FAST, easing = EasingCurves.Smooth)) + scaleIn(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            ),
+                            initialScale = 0.8f
+                        )
+                    ) {
+                        EnhancedGameCard(
+                            game = game,
+                            onClick = { onGameClick(game.id) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
@@ -349,7 +356,7 @@ private fun GamesGrid(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(40.dp),
+                .padding(24.dp),
             contentAlignment = Alignment.Center
         ) {
             EmptyGamesState()
@@ -360,16 +367,13 @@ private fun GamesGrid(
 @Composable
 private fun EmptyGamesState() {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(20.dp),
-                spotColor = NeutralGray400.copy(alpha = 0.15f)
-            ),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceElevated
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
         )
     ) {
         Column(
@@ -393,24 +397,18 @@ private fun EmptyGamesState() {
             )
             
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = NeutralGray200.copy(alpha = 0.5f),
-                modifier = Modifier
-                    .size(80.dp)
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(20.dp)
-                    )
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(80.dp)
             ) {
                 Box(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Default.PlayArrow,
+                        Icons.Default.SportsEsports,
                         contentDescription = "No games",
-                        tint = Primary,
-                        modifier = Modifier
-                            .size(40.dp)
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(40.dp)
                     )
                 }
             }
@@ -420,7 +418,7 @@ private fun EmptyGamesState() {
             Text(
                 text = "No Games Found",
                 style = MaterialTheme.typography.headlineSmall,
-                color = OnSurface,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
             
@@ -429,7 +427,7 @@ private fun EmptyGamesState() {
             Text(
                 text = "Try adjusting your search or filters to find games",
                 style = MaterialTheme.typography.bodyMedium,
-                color = OnSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             
@@ -437,10 +435,7 @@ private fun EmptyGamesState() {
             
             Button(
                 onClick = { /* Refresh or browse all */ },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary
-                )
+                shape = MaterialTheme.shapes.medium
             ) {
                 Icon(
                     Icons.Default.Refresh,
@@ -450,7 +445,7 @@ private fun EmptyGamesState() {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Refresh",
-                    style = CustomTextStyles.ButtonText
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
         }

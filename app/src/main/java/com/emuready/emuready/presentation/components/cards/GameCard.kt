@@ -6,61 +6,43 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.emuready.emuready.domain.entities.Game
-import com.emuready.emuready.presentation.ui.theme.*
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EnhancedGameCard(
+fun GameCard(
     game: Game,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    showRating: Boolean = true,
-    showCompatibility: Boolean = true
+    showRating: Boolean = true
 ) {
     var isPressed by remember { mutableStateOf(false) }
-    var isHovered by remember { mutableStateOf(false) }
-    
-    val haptic = LocalHapticFeedback.current
     
     val scale by animateFloatAsState(
-        targetValue = when {
-            isPressed -> 0.95f
-            isHovered -> 1.02f
-            else -> 1f
-        },
-        animationSpec = EmuAnimations.CardSpring,
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
         label = "card_scale"
-    )
-    
-    val elevation by animateDpAsState(
-        targetValue = when {
-            isPressed -> 2.dp
-            isHovered -> 12.dp
-            else -> 6.dp
-        },
-        animationSpec = tween(EmuAnimations.Duration.QUICK, easing = EmuAnimations.SmoothEasing),
-        label = "card_elevation"
     )
     
     val interactionSource = remember { MutableInteractionSource() }
@@ -68,39 +50,39 @@ fun EnhancedGameCard(
     Card(
         modifier = modifier
             .scale(scale)
-            .shadow(
-                elevation = elevation,
-                shape = RoundedCornerShape(16.dp),
-                spotColor = PrimaryPurple.copy(alpha = 0.25f)
-            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null
             ) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onClick()
             },
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceElevated
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 8.dp
         )
     ) {
-        Column {
-            // Game Cover with Gradient Overlay
+        Column(
+            modifier = Modifier.height(280.dp) // Fixed height for consistency
+        ) {
+            // Game Cover Image
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(180.dp)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
             ) {
                 AsyncImage(
-                    model = game.coverImageUrl,
+                    model = game.coverImageUrl ?: game.bannerUrl,
                     contentDescription = game.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
                 
-                // Gradient overlay for better text readability
+                // Subtle gradient overlay for better text readability
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -108,37 +90,19 @@ fun EnhancedGameCard(
                             Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Color.Black.copy(alpha = 0.7f)
+                                    Color.Black.copy(alpha = 0.3f)
                                 ),
-                                startY = 0f,
-                                endY = Float.POSITIVE_INFINITY
+                                startY = 100f,
+                                endY = 300f
                             )
                         )
                 )
                 
-                // Compatibility Badge
-                if (showCompatibility && game.averageCompatibility > 0.7f) {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = SuccessGreen,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp)
-                    ) {
-                        Text(
-                            text = "✓ Compatible",
-                            style = CustomTextStyles.Caption,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-                
-                // Rating Badge
+                // Rating badge
                 if (showRating && game.averageCompatibility > 0) {
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.Black.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(12.dp)
@@ -149,15 +113,17 @@ fun EnhancedGameCard(
                         ) {
                             Icon(
                                 Icons.Default.Star,
-                                contentDescription = "Rating",
-                                tint = AccentOrange,
-                                modifier = Modifier.size(12.dp)
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = String.format("%.1f", game.averageCompatibility * 5),
-                                style = CustomTextStyles.Caption,
-                                color = Color.White
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -166,13 +132,213 @@ fun EnhancedGameCard(
             
             // Game Info Section
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
                 // Game Title
                 Text(
                     text = game.title,
-                    style = CustomTextStyles.GameTitle,
-                    color = OnSurface,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // System/Platform
+                Text(
+                    text = game.system.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.weight(1f)) // Push bottom content down
+                
+                // Bottom info
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Listings count
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = "${game.totalListings} listings",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    
+                    // Favorite button
+                    var isFavorite by remember { mutableStateOf(game.isFavorite) }
+                    IconButton(
+                        onClick = { isFavorite = !isFavorite },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Enhanced version with more details for featured content
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EnhancedGameCard(
+    game: Game,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    showRating: Boolean = true,
+    showCompatibility: Boolean = true
+) {
+    var isPressed by remember { mutableStateOf(false) }
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "card_scale"
+    )
+    
+    val interactionSource = remember { MutableInteractionSource() }
+    
+    Card(
+        modifier = modifier
+            .scale(scale)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) {
+                onClick()
+            },
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp,
+            pressedElevation = 12.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.height(320.dp) // Fixed height for consistency
+        ) {
+            // Game Cover Image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+            ) {
+                AsyncImage(
+                    model = game.coverImageUrl ?: game.bannerUrl,
+                    contentDescription = game.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                
+                // Gradient overlay
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.4f)
+                                ),
+                                startY = 100f,
+                                endY = 400f
+                            )
+                        )
+                )
+                
+                // Compatibility badge
+                if (showCompatibility && game.averageCompatibility > 0.7f) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "✓ Compatible",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = MaterialTheme.colorScheme.onTertiary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+                
+                // Rating badge
+                if (showRating && game.averageCompatibility > 0) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Star,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = String.format("%.1f", game.averageCompatibility * 5),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Game Info Section
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // Game Title
+                Text(
+                    text = game.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -182,92 +348,44 @@ fun EnhancedGameCard(
                 // System/Platform
                 Text(
                     text = game.system.name,
-                    style = CustomTextStyles.GameSubtitle,
-                    color = OnSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
-                // Compatibility Stats Row
+                // Stats Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = PrimaryContainer.copy(alpha = 0.3f)
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Text(
                             text = "${game.totalListings} listings",
-                            style = CustomTextStyles.Caption,
-                            color = OnPrimaryContainer,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
                     
                     if (game.hasCompatibilityData) {
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = SuccessGreen.copy(alpha = 0.2f)
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.tertiaryContainer
                         ) {
                             Text(
                                 text = "${game.compatibilityPercentage}% compatible",
-                                style = CustomTextStyles.Caption,
-                                color = SuccessGreen,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Bottom Row with Stats
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Listings Count
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${game.totalListings}",
-                            style = CustomTextStyles.CardAccent,
-                            color = Primary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "listings",
-                            style = CustomTextStyles.Caption,
-                            color = OnSurfaceVariant
-                        )
-                    }
-                    
-                    // Favorite Button (animated)
-                    var isFavorite by remember { mutableStateOf(game.isFavorite) }
-                    val favoriteScale by animateFloatAsState(
-                        targetValue = if (isFavorite) 1.2f else 1f,
-                        animationSpec = SpringSpecs.Bouncy,
-                        label = "favorite_scale"
-                    )
-                    
-                    IconButton(
-                        onClick = { 
-                            isFavorite = !isFavorite 
-                        },
-                        modifier = Modifier.scale(favoriteScale)
-                    ) {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = "Favorite",
-                            tint = if (isFavorite) AccentOrange else OnSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
                     }
                 }
             }
